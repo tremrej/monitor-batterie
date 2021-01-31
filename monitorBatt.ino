@@ -83,6 +83,38 @@ void setup() {
 
 }
 
+void justify3(float value)
+{
+   if (value < 10)
+   {
+       tft.print("   ");
+   }
+   else if (value < 100)
+   {
+       tft.print("  ");
+   }
+   else if (value < 1000)
+   {
+       tft.print(" ");
+   }
+}
+
+void displayEcran1()
+{
+        tft.fillScreen(ILI9341_BLACK);
+        tft.setTextSize(1);
+        tft.setCursor(0, 12);
+        tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
+        tft.println("Moniteur de batterie, v0.0");
+
+        tft.print("Volt:           V");
+        tft.print("Curr:           A");
+        tft.print("Pwr :           W");
+
+        tft.print("deltaT:         us");
+
+}
+
 
 void loop(void) {
     static float busVoltage = 0;
@@ -111,14 +143,14 @@ void loop(void) {
 
         tft.fillScreen(ILI9341_BLACK);
         unsigned long start = micros();
-        tft.setCursor(0, 10);
+        tft.setCursor(0, 12);
         tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
-        tft.println("Hello World!");
+        tft.println("Moniteur de batterie, v0.0");
 
         tft.setTextSize(1);
-        tft.print("Volt: "); tft.print(busVoltage); tft.println(" V");
-        tft.print("Curr: "); tft.print(current); tft.println(" A");
-        tft.print("Pwr : "); tft.print(power); tft.println(" W");
+        tft.print("Volt: "); justify3(busVoltage); tft.print(busVoltage); tft.println(" V");
+        tft.print("Curr: "); justify3(current); tft.print(current ); tft.println(" A");
+        tft.print("Pwr : "); justify3(power); tft.print(power); tft.println(" W");
 
         tft.setTextSize(1);
         tft.print("deltaT: "); tft.print( micros() - start); tft.println(" us");
