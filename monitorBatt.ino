@@ -21,7 +21,6 @@
 #include "ampMeter.h"
 
 //#include <Wire.h>
-#include <Adafruit_INA219.h>
 
 
 // For the Adafruit shield, these are the default.
@@ -29,8 +28,6 @@
 #define TFT_CS 10
 
 #define nbAvg 20
-
-Adafruit_INA219 ina219;
 
 AmpMeter ampMeter_g;
 
@@ -62,14 +59,18 @@ void setup() {
   
   Serial.print(F("Rounded rects (outline)  "));
   Serial.println(testRoundRects());
+  tft.fillScreen(ILI9341_BLACK);
+  Serial.println(testFastLines(ILI9341_RED, ILI9341_BLUE));
+  tft.fillScreen(ILI9341_BLACK);
 
   tft.setFont(&FreeMono9pt7b);
 
   delay(500);
 
-  if (! ina219.begin()) 
+  if (! ampMeter_g.init()) 
   {
     Serial.println("Failed to find INA219 chip");
+    tft.setCursor(5, 20);
     tft.println("Failed to find INA219 chip");
     tft.println("Enter demo mode");
     demo = 1;
@@ -78,30 +79,46 @@ void setup() {
   }
   else
   {
-    ina219.setCalibration_16V_50A_75mv();
+      ampMeter_g.start();
   }
     
 
-  Serial.println(F("Done!"));
+  Serial.println(F("Done!"));;
+
 
   displayEcran1();
 
 }
 
-void justify3(float value)
+void printTimeFromMilliSec(unsigned long milliSec, int x, int y)
 {
-   if (value < 10)
-   {
-       tft.print("   ");
-   }
-   else if (value < 100)
-   {
-       tft.print("  ");
-   }
-   else if (value < 1000)
-   {
-       tft.print(" ");
-   }
+    float ttt;
+    int ti;
+
+    tft.fillRect(x-4, y-12, 116, 20, ILI9341_BLUE);
+    tft.setCursor(x,y);
+
+    // days
+    ttt = milliSec/(1000L*60*60*24);
+    tft.print(ti); tft.print(" ");
+
+    // hours
+    ttt = milliSec/(1000L*60*60);
+    ti = (int)trunc(ttt)%24;
+    if (ti < 10) tft.print("0");
+    tft.print(ti); tft.print(":");
+
+    // minutes
+    ttt = milliSec/(1000L*60);
+    ti = (int)trunc(ttt)%60;
+    if (ti < 10) tft.print("0");
+    tft.print(ti); tft.print(":");
+
+    // minutes
+    ttt = milliSec/(1000);
+    ti = (int)trunc(ttt)%60;
+    if (ti < 10) tft.print("0");
+    tft.print(ti);
 }
 
 void displayEcran1()
@@ -115,8 +132,10 @@ void displayEcran1()
         tft.println("Volt:           V");
         tft.println("Curr:           A");
         tft.println("Pwr :           W");
+        tft.println("AH  :           AH");
 
         tft.println("deltaT:         us");
+        tft.println("Time:            d h:m:s");
 }
 
 void printFloatAt(float value, int width, int x, int y)
@@ -136,7 +155,7 @@ void printFloatAt(float value, int width, int x, int y)
 
 void printIntAt(unsigned long value, int width, int x, int y)
 {
-    tft.fillRect(x, y-12, 100, 20, ILI9341_RED);
+    tft.fillRect(x-4, y-12, 100, 20, ILI9341_RED);
     tft.setCursor(x,y); tft.print(value);
 }
 
@@ -145,40 +164,23 @@ void loop(void) {
     static float current = 0;
     static float power = 0;
     static int loopCnt = 0;
-    float ttt;
+    unsigned long deltaTTick = 0;
+    unsigned long deltaTAvg = 0;
 
-    if (!demo)
-    {
-        busVoltage    += ina219.getBusVoltage_V();
-        current       += ina219.getCurrent_mA();
-        power         += ina219.getPower_mW();
-        //current       += ina219.getCurrentFromMultiplier_mA();
-    }
-    else
-    {
-        busVoltage    += 12.34;
-        current       += 9012;
-        power         += 34.56;
-    }
+    deltaTTick = ampMeter_g.tick();   // Take a measurement
 
     if (loopCnt % nbAvg == 0)
     {
+        deltaTAvg = ampMeter_g.average();  // Calculate average since last average.
+        printFloatAt(ampMeter_g.getAvgBusVolt(), 7, 65, 30);
+        printFloatAt(ampMeter_g.getAvgCurrent(), 7, 65, 48);
+        printFloatAt(ampMeter_g.getAvgPower(), 7, 65, 66);
+        printFloatAt(ampMeter_g.getAmpHour(), 7, 65, 84);
+        printIntAt(deltaTAvg, 7, 75, 102);
 
-        busVoltage = busVoltage/nbAvg;
-        current    = current/nbAvg/1000;
-        //power      = current * busVoltage;
-        power = power/nbAvg/1000;
+        printTimeFromMilliSec(millis() - ampMeter_g.getTimeSinceReset(), 65, 120);
+        
 
-        unsigned long start = micros();
-
-        printFloatAt(busVoltage, 7, 65, 30);
-        printFloatAt(current, 7, 65, 48);
-        printFloatAt(power, 7, 65, 66);
-        printIntAt((float)(micros() - start), 7, 75, 84);
-
-        busVoltage    = 0.0;
-        current       = 0.0;
-        power         = 0.0;
         loopCnt = 0;
     }
 
