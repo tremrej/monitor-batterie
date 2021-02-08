@@ -13,27 +13,50 @@
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 
+//#define ESP8266
 
-#include "SPI.h"
+#include <SPI.h>
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 #include <Adafruit_STMPE610.h>     // Touch screen
 #include "Fonts/FreeMono9pt7b.h"
 #include "ampMeter.h"
+#include "floatPicker.h"
+#include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
 
+
+#ifndef ESP8266
 #include <TimerOne.h>
+#else
+#include <Ticker.h>
+#endif
 
 //#include <Wire.h>
 
 
-// For the Adafruit shield, these are the default.
-#define TFT_DC 9
-#define TFT_CS 10
-// Touch screen chip select
-#define STMPE_CS 8
+#ifndef ESP8266
+    // For the Adafruit shield, these are the default.
+    #define TFT_DC 9
+    #define TFT_CS 10
+    // Touch screen chip select
+    #define STMPE_CS 8
+#else
+    // For the Adafruit shield, these are the default.
+    #define TFT_DC 15
+    #define TFT_CS 0
+    // Touch screen chip select
+    #define STMPE_CS 16
+    #define SD_CS 2
+#endif
 
 // Dim backlight
+#ifndef ESP8266
+// UNO
 #define dimPin 3
+#else
+// Feather
+#define dimPin 3
+#endif
 
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
@@ -44,6 +67,12 @@ AmpMeter ampMeter_g;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
+
+FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThres", 11.0, 13.0, 0.01);
+
+#ifdef ESP8266
+  Ticker measurementTicker;
+#endif
 
 
 // Touch screen calibration data for the raw touch data to the screen coordinates
@@ -85,6 +114,9 @@ Adafruit_GFX_Button dimButton = Adafruit_GFX_Button();
 enum ActiveWindow_e {
     windowEcran1_c,
     windowConfig_c,
+    windowPickDcDcInVoltThres_c,
+    windowPickDcDcDelay_c,
+    windowPickAllSelectDeadzone_c,
 };
 
 ActiveWindow_e activeWindow_g = windowEcran1_c;
@@ -101,6 +133,8 @@ void setMeasurementFlag()
     takeMeasurement_g = true;
 }
 
+// ==================================================================================
+// ==================================================================================
 void setup() {
   Serial.begin(115200);
   Serial.println("Moniteur de batterie, V0.0"); 
@@ -140,14 +174,16 @@ void setup() {
   // Create the buttons
   resetButton.initButton( &tft, resetButtonX, resetButtonY, resetButtonW, resetButtonH
                         , ILI9341_DARKGREY  // outline
-                        , ILI9341_GREEN  // fill
-                        , ILI9341_BLUE   // text
+                        , rgbTo565(128, 128, 128)
+                        , rgbTo565(255, 255, 0)
+                        //, ILI9341_GREEN  // fill
+                        //, ILI9341_BLUE   // text
                         , (char *)"rst", 1, 2);
   enableDcDcButton.initButtonUL( &tft, enableDcDcButtonX, enableDcDcButtonY
                                    , enableDcDcButtonW, enableDcDcButtonH
                         , ILI9341_DARKGREY  // outline
-                        , ILI9341_DARKGREY  // fill
-                        , ILI9341_RED   // text
+                        , 0xC958  // fill
+                        , 0x79EE   // text
                         , (char *)"off", 1, 2);
   configButton.initButtonUL( &tft, configButtonX, configButtonY, configButtonW, configButtonH
                         , ILI9341_DARKGREY  // outline
@@ -181,9 +217,15 @@ void setup() {
       ampMeter_g.start();
   }
 
+  dcDcInVoltThresPicker_g.init(12.0);
+
   // Setup measurement timer
+#ifndef ESP8266
   Timer1.initialize(2000000/nbAvg); // micro second
   Timer1.attachInterrupt(setMeasurementFlag);
+#else
+  measurementTicker.attach(2.0/nbAvg, setMeasurementFlag);
+#endif
 
   Serial.println(F("Done!"));;
 
@@ -192,43 +234,6 @@ void setup() {
   // Setup the backlight PWM control
   pinMode(dimPin, OUTPUT);
   analogWrite(dimPin, dimLevel_g);
-}
-
-void printTimeFromMilliSec(unsigned long milliSec, int x, int y)
-{
-    // format: d hh:mm:ss
-
-    float ttt;
-    int ti;
-
-    tft.fillRect(x-4, y-12, 116, 20, ILI9341_BLUE);
-    tft.setCursor(x,y);
-
-    tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
-
-    // days
-    ttt = milliSec/(1000L*60*60*24);
-    tft.print(ti); tft.print(" ");
-
-    // hours
-    ttt = milliSec/(1000L*60*60);
-    ti = (int)trunc(ttt)%24;
-    if (ti < 10) tft.print("0");
-    tft.print(ti); tft.print(":");
-
-    // minutes
-    ttt = milliSec/(1000L*60);
-    ti = (int)trunc(ttt)%60;
-    if (ti < 10) tft.print("0");
-    tft.print(ti); tft.print(":");
-
-    // seconds
-    //ttt = milliSec/(1000);
-    //ti = (int)trunc(ttt)%60;
-    ti = (milliSec%60000)/1000;
-    if (ti < 10) tft.print("0");
-    if (ti < 0) ti = 0;
-    tft.print(ti);
 }
 
 void processChangeOfWindow(ActiveWindow_e window)
@@ -243,7 +248,8 @@ void processChangeOfWindow(ActiveWindow_e window)
         }
         case windowConfig_c:
         {
-            displayStaticEcranConfig();
+            //displayStaticEcranConfig();
+            dcDcInVoltThresPicker_g.drawStatic();
             break;
         }
         default: break;
@@ -253,17 +259,25 @@ void processChangeOfWindow(ActiveWindow_e window)
 void displayStaticEcran1()
 {
         tft.fillScreen(ILI9341_BLACK);
+        tft.drawRect(0,0,tft.width(),tft.height(), rgbTo565(155,155,155));
+        tft.drawFastHLine(0,18,tft.width(), rgbTo565(155,155,155));
         tft.setTextSize(1);
-        tft.setCursor(0, 12);
+        tft.setCursor(5, 15);
         tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
         tft.println("Moniteur de batterie, v0.0");
 
+        tft.setCursor(5, tft.getCursorY());
         tft.println("Volt:           V");
+        tft.setCursor(5, tft.getCursorY());
         tft.println("Curr:           A");
+        tft.setCursor(5, tft.getCursorY());
         tft.println("Pwr :           W");
+        tft.setCursor(5, tft.getCursorY());
         tft.println("AH  :           AH");
 
+        tft.setCursor(5, tft.getCursorY());
         tft.println("deltaT:         us");
+        tft.setCursor(5, tft.getCursorY());
         tft.println("Time:            d h:m:s");
 
         resetButton.drawButton(false);
@@ -275,12 +289,12 @@ void displayStaticEcran1()
 
 void displayDataEcran1(unsigned long deltaTAvg)
 {
-    printFloatAt(ampMeter_g.getAvgBusVolt(), 7, 65, 30);
-    printFloatAt(ampMeter_g.getAvgCurrent(), 7, 65, 48);
-    printFloatAt(ampMeter_g.getAvgPower(), 7, 65, 66);
-    printFloatAt(ampMeter_g.getAmpHour(), 7, 65, 84);
-    printIntAt(deltaTAvg, 7, 75, 102);
-    printTimeFromMilliSec(millis() - ampMeter_g.getTimeSinceReset(), 65, 120);
+    printFloatAt(ampMeter_g.getAvgBusVolt(), 1, 70, 33);
+    printFloatAt(ampMeter_g.getAvgCurrent(), 1, 70, 51);
+    printFloatAt(ampMeter_g.getAvgPower(), 1, 70, 69);
+    printFloatAt(ampMeter_g.getAmpHour(), 1, 70, 87);
+    printIntAt(deltaTAvg, 1, 80, 105);
+    printTimeFromMilliSec(millis() - ampMeter_g.getTimeSinceReset(), 70, 123);
 }
 
 void displayStaticEcranConfig()
@@ -292,32 +306,8 @@ void displayStaticEcranConfig()
 //    configButton.drawButton(false);
     backButton.drawButton(false);
     dimButton.drawButton(false);
-    enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?"on":"off");
+    enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?(char *)"on":(char *)"off");
     enableDcDcButton.drawButton(enableDcDcButton.isPressed());
-}
-
-void printFloatAt(float value, int width, int x, int y)
-{
-    tft.setTextSize(1);
-    tft.setTextColor(ILI9341_WHITE);
-    tft.fillRect(x, y-12, 100, 20, ILI9341_RED);
-    char ttt[64];
-
-    // Add minus sign when the integer part is zero.
-    if (value < 0.0 && value > -1.0)
-    {
-        tft.setCursor(x+15,y);
-        tft.print("-");
-    }
-    sprintf(ttt, "%4d.%02d", (int) trunc(value), (int) abs(trunc(((value-trunc(value))*100))));
-    tft.setCursor(x,y); tft.print(ttt);
-}
-
-void printIntAt(unsigned long value, int width, int x, int y)
-{
-    tft.setTextSize(1);
-    tft.fillRect(x-4, y-12, 100, 20, ILI9341_RED);
-    tft.setCursor(x,y); tft.print(value);
 }
 
 void takeMeasurementAndDisplay(bool display)
@@ -349,32 +339,6 @@ void takeMeasurementAndDisplay(bool display)
         // Increment the loop count only if we got valid (new) date from INA219.
         loopCnt++;
     }
-}
-
-bool getTouchXY(int16_t *x, int16_t *y)
-{
-    if (ts.touched())
-    {
-        
-        ts.writeRegister8(STMPE_FIFO_STA, 0);    // unreset the fifo
-        if (!ts.bufferEmpty())
-        {
-            // Retrieve a point  
-            TS_Point p = ts.getPoint(); 
-            // Scale using the calibration #'s
-            // and rotate coordinate system
-            p.x = map(p.x, TS_MINY, TS_MAXY, 0, tft.height());
-            p.y = map(p.y, TS_MINX, TS_MAXX, 0, tft.width());
-            *y = tft.height() - p.x;
-            *x = p.y;
-            ts.writeRegister8(STMPE_INT_STA, 0xFF); // reset all ints, in this example unneeded depending in use
-            ts.writeRegister8(STMPE_FIFO_STA, STMPE_FIFO_STA_RESET);
-            return true;
-        }
-        ts.writeRegister8(STMPE_INT_STA, 0xFF); // reset all ints, in this example unneeded depending in use
-    }
-
-    return false;
 }
 
 void checkUIEcran1()
@@ -459,7 +423,7 @@ void checkUIConfig()
         if (enableDcDcButton.contains(x,y))
         {
             enableDcDcButton.press(!enableDcDcButton.isPressed());
-            enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?"on":"off");
+            enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?(char *)"on":(char *)"off");
             enableDcDcButton.drawButton(enableDcDcButton.isPressed());
             delay(100);
         }
@@ -501,7 +465,16 @@ void loop(void) {
     switch(activeWindow_g)
     {
         case windowEcran1_c: checkUIEcran1(); break;
-        case windowConfig_c: checkUIConfig(); break;
+        //case windowConfig_c: checkUIConfig(); break;
+        case windowConfig_c:
+        {
+            if (dcDcInVoltThresPicker_g.checkUI())
+            {
+                // Value saved. Let's go back to the main window.
+                nextWindow_g = windowEcran1_c;
+            }
+            break;
+        }
         default: break;
     }
 }
