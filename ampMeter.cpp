@@ -33,7 +33,7 @@ bool AmpMeter::init()
 void AmpMeter::start()
 {
     startAvg_m = micros();
-    timestampResetMicro_m = startAvg_m;
+//    timestampResetMicro_m = startAvg_m;
     timestampResetMilli_m = millis();
     avgCnt_m = 0;
     cumulBusVolt_m    = 0.0;
@@ -49,7 +49,7 @@ void AmpMeter::start()
 void AmpMeter::resetAmpHour()
 {
     ampSecondSinceReset_m = 0.0;
-    timestampResetMicro_m = micros();
+//    timestampResetMicro_m = micros();
     timestampResetMilli_m = millis();
 }
 
@@ -79,7 +79,7 @@ unsigned long AmpMeter::tick()
     }
     avgCnt_m++;
 
-    return micros() - start;
+    return 1;
 }
 
 unsigned long AmpMeter::average()

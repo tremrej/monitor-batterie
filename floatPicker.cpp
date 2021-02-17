@@ -119,11 +119,11 @@ bool FloatPicker::drawStatic()
     downButton_s.drawButton();
     saveButton_s.drawButton();
 
-    drawData();
-
+    return drawData();
 }
 
 bool FloatPicker::drawData()
 {
     printFloatAt(currentValue_m, 2, 130, 113);
+    return true;
 }

@@ -19,14 +19,14 @@
 #include <Adafruit_STMPE610.h>     // Touch screen
 
 // Touch screen calibration data for the raw touch data to the screen coordinates
-#ifndef ESP8266
+#ifndef NRF52
 // UNO
 #define TS_MINX 200
 #define TS_MINY 330
 #define TS_MAXX 3800
 #define TS_MAXY 3750
 #else
-// Feather 
+// Feather (NRF52)
 #define TS_MINX 100
 #define TS_MINY 3750
 #define TS_MAXX 3800

@@ -13,8 +13,6 @@
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 
-//#define ESP8266
-
 #include <SPI.h>
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
@@ -22,25 +20,31 @@
 #include "Fonts/FreeMono9pt7b.h"
 #include "ampMeter.h"
 #include "floatPicker.h"
+#include "chargerControl.h"
 #include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
 
+// Platform. Uncomment only one.
+//#define NRF52   // No need to uncomment this line when target board is NRF52. Cool.
+//#define UNO     // Uncomment to compile for Arduino UNO
+//#define ESP8266
 
-#ifndef ESP8266
+#ifdef UNO
 #include <TimerOne.h>
-#else
-#include <Ticker.h>
+#endif
+#ifdef NRF52
+#include "NRF52TimerInterrupt.h"
 #endif
 
-//#include <Wire.h>
 
 
-#ifndef ESP8266
+#ifdef UNO
     // For the Adafruit shield, these are the default.
     #define TFT_DC 9
     #define TFT_CS 10
     // Touch screen chip select
     #define STMPE_CS 8
-#else
+#endif
+#ifdef ESP8266
     // For the Adafruit shield, these are the default.
     #define TFT_DC 15
     #define TFT_CS 0
@@ -48,21 +52,37 @@
     #define STMPE_CS 16
     #define SD_CS 2
 #endif
+#ifdef NRF52
+    #define TFT_DC 11
+    #define TFT_CS 31
+    // Touch screen chip select
+    #define STMPE_CS 30
+    #define SD_CS 27
+#endif
 
-// Dim backlight
-#ifndef ESP8266
-// UNO
+#ifdef UNO
 #define dimPin 3
-#else
-// Feather
+#define pinIgnition A3
+#define pinDcDcEnabled 2       // relay 1
+#define pinDcDcSlow    5       // relay 2
+#endif
+#ifdef NRF52
 #define dimPin 3
+#define pinIgnition A3
+#define pinDcDcEnabled 7       // relay 1
+#define pinDcDcSlow    15      // relay 2
 #endif
 
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
 #define nbAvg 15
 
-AmpMeter ampMeter_g;
+AmpMeter ampMeterStarter_g(0x40);
+AmpMeter ampMeterHouse_g  (0x41);   // Bridge A0
+
+ChargerControl chargerControl_g(ampMeterStarter_g, ampMeterHouse_g,pinIgnition, pinDcDcEnabled, pinDcDcSlow);
+
+//ChargeControler chargeControler_gg(ampMeterStarter_g, ampMeterHouse_g, pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
@@ -70,8 +90,12 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
 FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThres", 11.0, 13.0, 0.01);
 
+
 #ifdef ESP8266
   Ticker measurementTicker;
+#endif
+#ifdef NRF52
+  NRF52Timer ITimer(NRF_TIMER_1);
 #endif
 
 
@@ -125,6 +149,8 @@ ActiveWindow_e nextWindow_g   = windowEcran1_c;
 // Backlight dim level 0..255
 unsigned int dimLevel_g = 64;
 
+bool ignitionIsOff = true;
+
 
 bool takeMeasurement_g = false;
 
@@ -143,7 +169,8 @@ void setup() {
   tft.setRotation(1);
 
   if (!ts.begin()) { 
-    Serial.println("Unable to start touchscreen.");
+    Serial.print("Unable to start touchscreen:");
+    Serial.println(STMPE_CS);
   } 
   else { 
     Serial.println("Touchscreen started."); 
@@ -203,29 +230,53 @@ void setup() {
                         , (char *)"dim", 1, 2);
   configButton.press(false);
 
-  if (! ampMeter_g.init()) 
+  if (! ampMeterStarter_g.init()) 
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
     tft.println("Failed to find INA219 chip");
     tft.println("Enter demo mode");
     delay(1000);
-//    while (1) { delay(10); }
   }
   else
   {
-      ampMeter_g.start();
+      ampMeterStarter_g.start();
+  }
+  if (! ampMeterHouse_g.init()) 
+  {
+    Serial.println("Failed to find INA219 chip");
+    tft.setCursor(5, 20);
+    tft.println("Failed to find INA219 chip");
+    tft.println("Enter demo mode");
+    delay(1000);
+  }
+  else
+  {
+      ampMeterHouse_g.start();
   }
 
   dcDcInVoltThresPicker_g.init(12.0);
 
   // Setup measurement timer
-#ifndef ESP8266
+#ifdef UNO
   Timer1.initialize(2000000/nbAvg); // micro second
   Timer1.attachInterrupt(setMeasurementFlag);
-#else
+#endif
+#ifdef NRF52
+  if (ITimer.attachInterruptInterval(2000000/nbAvg, setMeasurementFlag))
+  {
+    Serial.print(F("Starting ITimer OK, millis() = ")); Serial.println(millis());
+  }
+  else
+  {
+    Serial.println(F("Can't set ITimer. Select another freq. or timer"));
+  }
+#endif
+#ifdef ESP8266
   measurementTicker.attach(2.0/nbAvg, setMeasurementFlag);
 #endif
+// Note: for M4 board, use SAMD interrupt by including the file SAMDTimerInterrupt.h
+// Note: for NRF52 board use NRF52TimerInterrupt.h. See example /home/rejean/sketchbook/libraries/NRF52_TimerInterrupt/examples/TimerInterruptLEDDemo
 
   Serial.println(F("Done!"));;
 
@@ -234,6 +285,14 @@ void setup() {
   // Setup the backlight PWM control
   pinMode(dimPin, OUTPUT);
   analogWrite(dimPin, dimLevel_g);
+
+  pinMode(pinDcDcEnabled, OUTPUT);
+  digitalWrite(pinDcDcEnabled, LOW);
+  pinMode(pinDcDcSlow, OUTPUT);
+  digitalWrite(pinDcDcSlow, HIGH);
+  pinMode(pinIgnition, INPUT);
+
+  chargerControl_g.init();
 }
 
 void processChangeOfWindow(ActiveWindow_e window)
@@ -289,12 +348,12 @@ void displayStaticEcran1()
 
 void displayDataEcran1(unsigned long deltaTAvg)
 {
-    printFloatAt(ampMeter_g.getAvgBusVolt(), 1, 70, 33);
-    printFloatAt(ampMeter_g.getAvgCurrent(), 1, 70, 51);
-    printFloatAt(ampMeter_g.getAvgPower(), 1, 70, 69);
-    printFloatAt(ampMeter_g.getAmpHour(), 1, 70, 87);
+    printFloatAt(ampMeterStarter_g.getAvgBusVolt(), 1, 70, 33);
+    printFloatAt(ampMeterStarter_g.getAvgCurrent(), 1, 70, 51);
+    printFloatAt(ampMeterStarter_g.getAvgPower(), 1, 70, 69);
+    printFloatAt(ampMeterStarter_g.getAmpHour(), 1, 70, 87);
     printIntAt(deltaTAvg, 1, 80, 105);
-    printTimeFromMilliSec(millis() - ampMeter_g.getTimeSinceReset(), 70, 123);
+    printTimeFromMilliSec(millis() - ampMeterStarter_g.getTimeSinceReset(), 70, 123);
 }
 
 void displayStaticEcranConfig()
@@ -316,7 +375,7 @@ void takeMeasurementAndDisplay(bool display)
     unsigned long deltaTTick = 0;
     unsigned long deltaTAvg = 0;
 
-    deltaTTick = ampMeter_g.tick();   // Take a measurement
+    deltaTTick = ampMeterStarter_g.tick();   // Take a measurement
     if (deltaTTick == 0)
     {
         Serial.print("Data not ready from INA219, time (ms): ");
@@ -325,7 +384,7 @@ void takeMeasurementAndDisplay(bool display)
 
     if (deltaTTick && loopCnt % nbAvg == 0)
     {
-        deltaTAvg = ampMeter_g.average();  // Calculate average since last average.
+        deltaTAvg = ampMeterStarter_g.average();  // Calculate average since last average.
         //if (activeWindow_g == windowEcran1_c)
         if (display)
         {
@@ -352,7 +411,7 @@ void checkUIEcran1()
         if (resetButton.contains(x,y))
         {
             toggle_s = toggle_s? false: true;
-            ampMeter_g.resetAmpHour();
+            ampMeterStarter_g.resetAmpHour();
             resetButton.drawButton(toggle_s);
             delay(100);
         }
@@ -382,7 +441,7 @@ void adjustBacklight()
     }
     else if (dimLevel_g > 20)
     {
-        dimLevel_g = 8;
+        dimLevel_g = 0;
     }
     else
     {
@@ -403,7 +462,6 @@ void adjustBacklight()
 void checkUIConfig()
 {
     static bool toggle_s = false;
-    static bool toggle2_s = false;
     int16_t x = 0;
     int16_t y = 0;
     if (getTouchXY(&x, &y))
@@ -449,10 +507,15 @@ unsigned long testRoundRects() {
 
 void loop(void) {
 
+    chargerControl_g.tick();
+
     if (takeMeasurement_g)
     {
         takeMeasurement_g = false;    // Wait for next timer interrupt
         takeMeasurementAndDisplay(activeWindow_g == windowEcran1_c);
+        Serial.print("Active window: ");
+        Serial.print(activeWindow_g);
+        Serial.println(millis());
     }
 
     if (nextWindow_g != activeWindow_g)
@@ -477,4 +540,23 @@ void loop(void) {
         }
         default: break;
     }
+//    if (digitalRead(pinIgnition) == HIGH)
+//    {
+//        if (ignitionIsOff)
+//        {
+//            Serial.println("Ignition turned on");
+//            ignitionIsOff = false;
+//            // Debounce
+//            delay(10);
+//        }
+//    }
+//    else
+//    {
+//        if (!ignitionIsOff)
+//        {
+//            Serial.println("Ignition turned off");
+//            ignitionIsOff = true;
+//            delay(10);
+//        }
+//    }
 }
