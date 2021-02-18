@@ -52,6 +52,7 @@ void printTimeFromMilliSec(unsigned long milliSec, int x, int y)
 
     // days
     ttt = milliSec/(1000L*60*60*24);
+    ti = trunc(ttt);
     tft.print(ti); tft.print(" ");
 
     // hours

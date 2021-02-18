@@ -1,16 +1,8 @@
 /***************************************************
-  This is our GFX example for the Adafruit ILI9341 Breakout and Shield
-  ----> http://www.adafruit.com/products/1651
+  Monitor of two bank of 12 volts battery 
+  plus DC-DC charge controller
 
-  Check out the links above for our tutorials and wiring diagrams
-  These displays use SPI to communicate, 4 or 5 pins are required to
-  interface (RST is optional)
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.
-  MIT license, all text above must be included in any redistribution
+  Written by Rejean Tremblay 
  ****************************************************/
 
 #include <SPI.h>
@@ -23,56 +15,46 @@
 #include "chargerControl.h"
 #include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
 
-// Platform. Uncomment only one.
-//#define NRF52   // No need to uncomment this line when target board is NRF52. Cool.
-//#define UNO     // Uncomment to compile for Arduino UNO
-//#define ESP8266
+// Board supported
+// =================================================
+//      Macro                Name of board in IDE
+// --------------------    -------------------------
+// NRF52                   Adafruit Feather nRF52832
+// ARDUINO_AVR_MEGA2560    Arduino Mega 2560
+//
+// Note: The code is too large for Arduino UNO
 
-#ifdef UNO
+#ifdef ARDUINO_AVR_MEGA2560
 #include <TimerOne.h>
-#endif
-#ifdef NRF52
+#elif NRF52
 #include "NRF52TimerInterrupt.h"
 #endif
 
-
-
-#ifdef UNO
-    // For the Adafruit shield, these are the default.
-    #define TFT_DC 9
-    #define TFT_CS 10
-    // Touch screen chip select
-    #define STMPE_CS 8
-    #define blinkingLed 13
-#endif
-#ifdef ESP8266
-    // For the Adafruit shield, these are the default.
-    #define TFT_DC 15
-    #define TFT_CS 0
-    // Touch screen chip select
-    #define STMPE_CS 16
-    #define SD_CS 2
-#endif
-#ifdef NRF52
-    #define TFT_DC 11
-    #define TFT_CS 31
-    // Touch screen chip select
-    #define STMPE_CS 30
-    #define SD_CS 27
-    #define blinkingLed 17
-#endif
-
-#ifdef UNO
+// Pins for Adafruit Arduino TFT shield
+#ifdef ARDUINO_AVR_MEGA2560
+#define TFT_DC 9
+#define TFT_CS 10
+#define STMPE_CS 8
 #define dimPin 3
+#elif NRF52
+#define TFT_DC 11
+#define TFT_CS 31
+#define STMPE_CS 30
+#define SD_CS 27
+#define dimPin 3
+#endif
+
+// Pins for input/output
+#ifdef ARDUINO_AVR_MEGA2560
 #define pinIgnition A3
 #define pinDcDcEnabled 2       // relay 1
 #define pinDcDcSlow    5       // relay 2
-#endif
-#ifdef NRF52
-#define dimPin 3
+#define blinkingLed 13
+#elif NRF52
 #define pinIgnition A3
 #define pinDcDcEnabled 7       // relay 1
 #define pinDcDcSlow    15      // relay 2
+#define blinkingLed 17
 #endif
 
 // The number of reading to average is fine tune in order to make sure we always read new data.
@@ -93,9 +75,6 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThres", 11.0, 13.0, 0.01);
 
 
-#ifdef ESP8266
-  Ticker measurementTicker;
-#endif
 #ifdef NRF52
   NRF52Timer ITimer(NRF_TIMER_1);
 #endif
@@ -260,11 +239,10 @@ void setup() {
   dcDcInVoltThresPicker_g.init(12.0);
 
   // Setup measurement timer
-#ifdef UNO
+#ifdef ARDUINO_AVR_MEGA2560
   Timer1.initialize(2000000/nbAvg); // micro second
   Timer1.attachInterrupt(setMeasurementFlag);
-#endif
-#ifdef NRF52
+#elif NRF52
   if (ITimer.attachInterruptInterval(2000000/nbAvg, setMeasurementFlag))
   {
     Serial.print(F("Starting ITimer OK, millis() = ")); Serial.println(millis());
