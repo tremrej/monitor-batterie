@@ -49,6 +49,7 @@ public:
 
 private:
 
+    int address_m;
     bool demo;
 
     Adafruit_INA219 *ina219_mp;  // Driver of the amp meter

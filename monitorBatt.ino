@@ -43,6 +43,7 @@
     #define TFT_CS 10
     // Touch screen chip select
     #define STMPE_CS 8
+    #define blinkingLed 13
 #endif
 #ifdef ESP8266
     // For the Adafruit shield, these are the default.
@@ -58,6 +59,7 @@
     // Touch screen chip select
     #define STMPE_CS 30
     #define SD_CS 27
+    #define blinkingLed 17
 #endif
 
 #ifdef UNO
@@ -376,6 +378,7 @@ void takeMeasurementAndDisplay(bool display)
     unsigned long deltaTAvg = 0;
 
     deltaTTick = ampMeterStarter_g.tick();   // Take a measurement
+    deltaTTick = ampMeterHouse_g.tick();   // Take a measurement
     if (deltaTTick == 0)
     {
         Serial.print("Data not ready from INA219, time (ms): ");
@@ -385,12 +388,17 @@ void takeMeasurementAndDisplay(bool display)
     if (deltaTTick && loopCnt % nbAvg == 0)
     {
         deltaTAvg = ampMeterStarter_g.average();  // Calculate average since last average.
+        deltaTAvg = ampMeterHouse_g.average();  // Calculate average since last average.
         //if (activeWindow_g == windowEcran1_c)
         if (display)
         {
             displayDataEcran1(deltaTAvg);
         }
         loopCnt = 0;
+
+        // Toggle the led
+        digitalWrite(blinkingLed, !digitalRead(blinkingLed));
+        
     }
 
     if (deltaTTick)
@@ -412,6 +420,7 @@ void checkUIEcran1()
         {
             toggle_s = toggle_s? false: true;
             ampMeterStarter_g.resetAmpHour();
+            ampMeterHouse_g.resetAmpHour();
             resetButton.drawButton(toggle_s);
             delay(100);
         }
@@ -507,15 +516,14 @@ unsigned long testRoundRects() {
 
 void loop(void) {
 
+    // Tick the charge controller.
     chargerControl_g.tick();
 
     if (takeMeasurement_g)
     {
+        // It's time to take a measurement according to the timer interrupt.
         takeMeasurement_g = false;    // Wait for next timer interrupt
         takeMeasurementAndDisplay(activeWindow_g == windowEcran1_c);
-        Serial.print("Active window: ");
-        Serial.print(activeWindow_g);
-        Serial.println(millis());
     }
 
     if (nextWindow_g != activeWindow_g)
@@ -531,6 +539,7 @@ void loop(void) {
         //case windowConfig_c: checkUIConfig(); break;
         case windowConfig_c:
         {
+            // For now config is simply a input voltage limit picker.
             if (dcDcInVoltThresPicker_g.checkUI())
             {
                 // Value saved. Let's go back to the main window.
@@ -540,23 +549,4 @@ void loop(void) {
         }
         default: break;
     }
-//    if (digitalRead(pinIgnition) == HIGH)
-//    {
-//        if (ignitionIsOff)
-//        {
-//            Serial.println("Ignition turned on");
-//            ignitionIsOff = false;
-//            // Debounce
-//            delay(10);
-//        }
-//    }
-//    else
-//    {
-//        if (!ignitionIsOff)
-//        {
-//            Serial.println("Ignition turned off");
-//            ignitionIsOff = true;
-//            delay(10);
-//        }
-//    }
 }

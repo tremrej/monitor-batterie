@@ -25,41 +25,65 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , pinRelayDcDcSlow_m   (pinRelayDcDcSlow)
     , holdOffTimerId_m(-1)
     , ignitionOn_m (false)
+    , alternatorOn_m (false)
 
 {
+    // Definition of states
     stateIdle_m       = new State(NULL, NULL, NULL);
     stateIgnitionOn_m = new State(NULL, NULL, NULL);
+    stateAlternatorOn_m = new State(NULL, NULL, NULL);
     stateChargerEnabled_m = new State(NULL, NULL, NULL);
 
+    // Creation of the finite state machine
     fsm_m = new Fsm(stateIdle_m);
 
-    fsm_m->add_transition( stateIdle_m,           stateIgnitionOn_m,     ignitionTurnedOn_c,      &startHoldoffTimer);
+    // Definition of the possible transition
+    fsm_m->add_transition( stateIdle_m,           stateIgnitionOn_m,     ignitionTurnedOn_c,      NULL);
+    fsm_m->add_transition( stateIdle_m,           stateAlternatorOn_m,   ignitionTurnedOnAlterOn_c, &startHoldoffTimer);
     fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
-    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
+    fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
+    fsm_m->add_transition( stateIgnitionOn_m,     stateAlternatorOn_m,   alternatorTurnedOn_c,    &startHoldoffTimer);
+    fsm_m->add_transition( stateAlternatorOn_m,   stateChargerEnabled_m, chargerHoldoffExpired_c, &startCharger);
     fsm_m->add_transition( stateIgnitionOn_m,     stateChargerEnabled_m, chargerHoldoffExpired_c, &startCharger);
+    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           alternatorTurnedOff_c,   &stopCharger);
+    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
 
+    // Set the pointer to the singleton charge controller.
     cc_g = this;
 }
 
 ChargerControl::~ChargerControl( )
 {
+    free (stateIdle_m);
 }
 
 bool ChargerControl::init( )
 {
+    // Start the state machine.
+    // Then from now on the state machine is event driven.
     fsm_m->run_machine();
     return true;
 }
 
 void ChargerControl::tick( )
 {
+    // Kick the timer engine
     sTimerEngine_m.run();
 
+    // Check ignition key
     if (digitalRead(pinIgnition_m) == HIGH)
     {
         if (!ignitionOn_m)
         {
-            fsm_m->trigger(ignitionTurnedOn_c);
+            if (!alternatorOn_m)
+            {
+                fsm_m->trigger(ignitionTurnedOn_c);
+            }
+            else
+            {
+                // The alternator is already on for some reason
+                fsm_m->trigger(ignitionTurnedOnAlterOn_c);
+            }
             Serial.println("Ignition turned on");
             ignitionOn_m = true;
             // Debounce
@@ -75,6 +99,45 @@ void ChargerControl::tick( )
             ignitionOn_m = false;
             delay(10);
         }
+    }
+
+    // Check state of alternator
+    float starterBattCurrent = ampMeterStarter_m->getAvgCurrent();
+    if (starterBattCurrent < -1.0)     // TODO Use a configurable value
+    {
+        //if (!alternatorOn_m || fsm_m->getCurrentState() != stateAlternatorOn_m)
+        if (!alternatorOn_m)
+        {
+            fsm_m->trigger(alternatorTurnedOn_c);
+            Serial.println("Alternator turned on");
+            alternatorOn_m = true;
+            // Debounce
+            delay(10);
+        }
+    }
+    else if (starterBattCurrent > 10.0)   // TODO Use a configurable value
+    {
+        // When the DC-DC charger kicks in, the starter battery will most likely discharge for a short period of time.
+        // I need to think of an algorithm to detect reliably that the alternator stopped. The most reliable way
+        // would be to measure the shunt on the alternator output. I might do that. According to spec from BlueSea it's a 50 Amp 50 mV.
+        // I just need to put a INA219 on it.
+        // For now I'll declare the alternator off by a big discharge rate.
+        if (alternatorOn_m)
+        {
+            fsm_m->trigger(alternatorTurnedOff_c);
+            Serial.println("Alternator turned off");
+            alternatorOn_m = false;
+            delay(10);
+        }
+    }
+}
+
+void ChargerControl::checkAlternator()
+{
+    if (cc_g->ampMeterStarter_m->getAvgCurrent() < -1.0)
+    {
+        Serial.println("Alternator is already on");
+        cc_g->fsm_m->trigger(alternatorTurnedOn_c);
     }
 }
 

@@ -8,6 +8,7 @@
 
 AmpMeter::AmpMeter(int address)
 {
+    address_m = address;
     ina219_mp = new Adafruit_INA219(address);
 }
 
@@ -56,6 +57,8 @@ void AmpMeter::resetAmpHour()
 unsigned long AmpMeter::tick()
 {
     unsigned long start = micros();
+    unsigned long timeSpent = 0;
+
     if (!demo)
     {
         bool dataReady = false;
@@ -68,18 +71,27 @@ unsigned long AmpMeter::tick()
             // Returns 0 to indicate we read old data.
             return 0;
         }
+        timeSpent = micros() - start;
     }
     else
     {
-#define demoVolt 12.35
-#define demoCurrent 60000
+        float demoVolt = 12.05;
+        float demoCurrent = -2000.0;    // mA
+
+        if (address_m != 0x40)   // Not Starter batterie
+        {
+            demoVolt = 12.35;
+            demoCurrent = 60000.0;    // mA
+        }
         cumulBusVolt_m    += demoVolt;
         cumulCurrent_m    += demoCurrent;
         cumulPower_m      += (demoVolt * demoCurrent);
+        // On the NRF52 processor, the time in demo mode is less than one micro second. We make it 1 to not block the processing.
+        timeSpent = 1;
     }
     avgCnt_m++;
 
-    return 1;
+    return timeSpent;
 }
 
 unsigned long AmpMeter::average()

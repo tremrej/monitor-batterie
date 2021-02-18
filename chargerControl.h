@@ -29,9 +29,10 @@ public:
 
     enum Event_e {
         ignitionTurnedOn_c,
+        ignitionTurnedOnAlterOn_c,
         ignitionTurnedOff_c,
         alternatorTurnedOn_c,
-        alternatorTurnedOff,
+        alternatorTurnedOff_c,
         chargerHoldoffExpired_c,
         batterieSelectorAllDetected_c,
     };
@@ -54,6 +55,7 @@ private:
     static void holdoffTimerExpired();
     static void stopCharger();
     static void startCharger();
+    static void checkAlternator();
 
     AmpMeter *ampMeterStarter_m;
     AmpMeter *ampMeterHouse_m;
@@ -64,6 +66,7 @@ private:
     // List of state
     State *stateIdle_m;
     State *stateIgnitionOn_m;
+    State *stateAlternatorOn_m;
     State *stateChargerEnabled_m;
 
     Fsm *fsm_m;
@@ -73,6 +76,7 @@ private:
 
     // Local state
     bool ignitionOn_m;
+    bool alternatorOn_m;
 
 };
 
