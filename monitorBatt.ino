@@ -11,6 +11,7 @@
 #include <Adafruit_STMPE610.h>     // Touch screen
 #include "Fonts/FreeMono9pt7b.h"
 #include "ampMeter.h"
+#include "ecranPrincipal.h"
 #include "floatPicker.h"
 #include "chargerControl.h"
 #include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
@@ -74,47 +75,18 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
 FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThres", 11.0, 13.0, 0.01);
 
+EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
+                                                 , ampMeterStarter_g
+                                                 , ampMeterHouse_g
+                                                 , dimPin
+                                                 , pinIgnition
+                                                 , pinDcDcEnabled
+                                                 , pinDcDcSlow);
+
 
 #ifdef NRF52
   NRF52Timer ITimer(NRF_TIMER_1);
 #endif
-
-
-// Touch screen calibration data for the raw touch data to the screen coordinates
-#define TS_MINX 200
-#define TS_MINY 330
-#define TS_MAXX 3800
-#define TS_MAXY 3750
-
-Adafruit_GFX_Button configButton = Adafruit_GFX_Button();
-#define configButtonX 50
-#define configButtonY 210
-#define configButtonW 80
-#define configButtonH 31
-
-Adafruit_GFX_Button resetButton = Adafruit_GFX_Button();
-#define resetButtonX 200
-#define resetButtonY 200
-#define resetButtonW 40
-#define resetButtonH 40
-
-Adafruit_GFX_Button enableDcDcButton = Adafruit_GFX_Button();
-#define enableDcDcButtonX 278
-#define enableDcDcButtonY 170-20
-#define enableDcDcButtonW 40
-#define enableDcDcButtonH 31
-
-Adafruit_GFX_Button backButton = Adafruit_GFX_Button();
-#define backButtonX 320-62
-#define backButtonY 210
-#define backButtonW 60
-#define backButtonH 31
-
-Adafruit_GFX_Button dimButton = Adafruit_GFX_Button();
-#define dimButtonX 2
-#define dimButtonY 210
-#define dimButtonW 40
-#define dimButtonH 31
 
 enum ActiveWindow_e {
     windowEcran1_c,
@@ -126,9 +98,6 @@ enum ActiveWindow_e {
 
 ActiveWindow_e activeWindow_g = windowEcran1_c;
 ActiveWindow_e nextWindow_g   = windowEcran1_c;
-
-// Backlight dim level 0..255
-unsigned int dimLevel_g = 64;
 
 bool ignitionIsOff = true;
 
@@ -180,36 +149,6 @@ void setup() {
   delay(500);
 
   // Create the buttons
-  resetButton.initButton( &tft, resetButtonX, resetButtonY, resetButtonW, resetButtonH
-                        , ILI9341_DARKGREY  // outline
-                        , rgbTo565(128, 128, 128)
-                        , rgbTo565(255, 255, 0)
-                        //, ILI9341_GREEN  // fill
-                        //, ILI9341_BLUE   // text
-                        , (char *)"rst", 1, 2);
-  enableDcDcButton.initButtonUL( &tft, enableDcDcButtonX, enableDcDcButtonY
-                                   , enableDcDcButtonW, enableDcDcButtonH
-                        , ILI9341_DARKGREY  // outline
-                        , 0xC958  // fill
-                        , 0x79EE   // text
-                        , (char *)"off", 1, 2);
-  configButton.initButtonUL( &tft, configButtonX, configButtonY, configButtonW, configButtonH
-                        , ILI9341_DARKGREY  // outline
-                        , ILI9341_YELLOW  // fill
-                        , ILI9341_BLUE   // text
-                        , (char *)"config  ", 1, 2);
-
-  backButton.initButtonUL( &tft, backButtonX, backButtonY, backButtonW, backButtonH
-                        , ILI9341_DARKGREY  // outline
-                        , ILI9341_ORANGE  // fill
-                        , ILI9341_BLUE   // text
-                        , (char *)"back  ", 1, 2);
-  dimButton.initButtonUL( &tft, dimButtonX, dimButtonY, dimButtonW, dimButtonH
-                        , ILI9341_DARKGREY  // outline
-                        , ILI9341_DARKGREY  // fill
-                        , ILI9341_BLACK   // text
-                        , (char *)"dim", 1, 2);
-  configButton.press(false);
 
   if (! ampMeterStarter_g.init()) 
   {
@@ -237,6 +176,7 @@ void setup() {
   }
 
   dcDcInVoltThresPicker_g.init(12.0);
+  ecranPrincipal_g.init();
 
   // Setup measurement timer
 #ifdef ARDUINO_AVR_MEGA2560
@@ -252,19 +192,15 @@ void setup() {
     Serial.println(F("Can't set ITimer. Select another freq. or timer"));
   }
 #endif
-#ifdef ESP8266
-  measurementTicker.attach(2.0/nbAvg, setMeasurementFlag);
-#endif
 // Note: for M4 board, use SAMD interrupt by including the file SAMDTimerInterrupt.h
-// Note: for NRF52 board use NRF52TimerInterrupt.h. See example /home/rejean/sketchbook/libraries/NRF52_TimerInterrupt/examples/TimerInterruptLEDDemo
 
   Serial.println(F("Done!"));;
 
-  displayStaticEcran1();
+  ecranPrincipal_g.drawStatic();
 
   // Setup the backlight PWM control
   pinMode(dimPin, OUTPUT);
-  analogWrite(dimPin, dimLevel_g);
+  analogWrite(dimPin, 128);
 
   pinMode(pinDcDcEnabled, OUTPUT);
   digitalWrite(pinDcDcEnabled, LOW);
@@ -281,13 +217,12 @@ void processChangeOfWindow(ActiveWindow_e window)
     {
         case windowEcran1_c:
         {
-            displayStaticEcran1();
-            displayDataEcran1(0);
+            ecranPrincipal_g.drawStatic();
+            ecranPrincipal_g.drawData();
             break;
         }
         case windowConfig_c:
         {
-            //displayStaticEcranConfig();
             dcDcInVoltThresPicker_g.drawStatic();
             break;
         }
@@ -295,65 +230,10 @@ void processChangeOfWindow(ActiveWindow_e window)
     }
 }
 
-void displayStaticEcran1()
-{
-        tft.fillScreen(ILI9341_BLACK);
-        tft.drawRect(0,0,tft.width(),tft.height(), rgbTo565(155,155,155));
-        tft.drawFastHLine(0,18,tft.width(), rgbTo565(155,155,155));
-        tft.setTextSize(1);
-        tft.setCursor(5, 15);
-        tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
-        tft.println("Moniteur de batterie, v0.0");
-
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("Volt:           V");
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("Curr:           A");
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("Pwr :           W");
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("AH  :           AH");
-
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("deltaT:         us");
-        tft.setCursor(5, tft.getCursorY());
-        tft.println("Time:            d h:m:s");
-
-        resetButton.drawButton(false);
-        enableDcDcButton.drawButton(enableDcDcButton.isPressed());
-        configButton.drawButton(false);
-        dimButton.drawButton(false);
-        tft.setTextSize(1);
-}
-
-void displayDataEcran1(unsigned long deltaTAvg)
-{
-    printFloatAt(ampMeterStarter_g.getAvgBusVolt(), 1, 70, 33);
-    printFloatAt(ampMeterStarter_g.getAvgCurrent(), 1, 70, 51);
-    printFloatAt(ampMeterStarter_g.getAvgPower(), 1, 70, 69);
-    printFloatAt(ampMeterStarter_g.getAmpHour(), 1, 70, 87);
-    printIntAt(deltaTAvg, 1, 80, 105);
-    printTimeFromMilliSec(millis() - ampMeterStarter_g.getTimeSinceReset(), 70, 123);
-}
-
-void displayStaticEcranConfig()
-{
-    tft.fillScreen(ILI9341_YELLOW);
-    tft.setCursor(40, 170);
-    tft.setTextColor(ILI9341_BLACK);  tft.setTextSize(1);
-    tft.print("Starter charge House");
-//    configButton.drawButton(false);
-    backButton.drawButton(false);
-    dimButton.drawButton(false);
-    enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?(char *)"on":(char *)"off");
-    enableDcDcButton.drawButton(enableDcDcButton.isPressed());
-}
-
 void takeMeasurementAndDisplay(bool display)
 {
     static int loopCnt = 0;
     unsigned long deltaTTick = 0;
-    unsigned long deltaTAvg = 0;
 
     deltaTTick = ampMeterStarter_g.tick();   // Take a measurement
     deltaTTick = ampMeterHouse_g.tick();   // Take a measurement
@@ -365,12 +245,12 @@ void takeMeasurementAndDisplay(bool display)
 
     if (deltaTTick && loopCnt % nbAvg == 0)
     {
-        deltaTAvg = ampMeterStarter_g.average();  // Calculate average since last average.
-        deltaTAvg = ampMeterHouse_g.average();  // Calculate average since last average.
+        ampMeterStarter_g.average();  // Calculate average since last average.
+        ampMeterHouse_g.average();  // Calculate average since last average.
         //if (activeWindow_g == windowEcran1_c)
         if (display)
         {
-            displayDataEcran1(deltaTAvg);
+            ecranPrincipal_g.drawData();
         }
         loopCnt = 0;
 
@@ -383,95 +263,6 @@ void takeMeasurementAndDisplay(bool display)
     {
         // Increment the loop count only if we got valid (new) date from INA219.
         loopCnt++;
-    }
-}
-
-void checkUIEcran1()
-{
-    static bool toggle_s = false;
-    static bool toggle2_s = false;
-    int16_t x = 0;
-    int16_t y = 0;
-    if (getTouchXY(&x, &y))
-    {
-        if (resetButton.contains(x,y))
-        {
-            toggle_s = toggle_s? false: true;
-            ampMeterStarter_g.resetAmpHour();
-            ampMeterHouse_g.resetAmpHour();
-            resetButton.drawButton(toggle_s);
-            delay(100);
-        }
-        if (configButton.contains(x,y))
-        {
-            toggle2_s = toggle2_s? false: true;
-            configButton.press(toggle2_s);
-            configButton.drawButton(toggle2_s);
-            nextWindow_g = windowConfig_c;
-            delay(100);
-        }
-        if (dimButton.contains(x,y))
-        {
-            adjustBacklight();
-            delay(100);
-        }
-    }
-}
-
-void adjustBacklight()
-{
-    char newLabel[10];
-    uint16_t temp;
-    if (dimLevel_g > 64)
-    {
-        dimLevel_g -= 64;
-    }
-    else if (dimLevel_g > 20)
-    {
-        dimLevel_g = 0;
-    }
-    else
-    {
-        // Rollover to full power
-        dimLevel_g = 250;
-    }
-    analogWrite(dimPin, dimLevel_g);
-    temp = dimLevel_g*100/255;
-    sprintf(newLabel, "%d", temp);
-    // Add '%' to the new lable
-    temp = strlen(newLabel);
-    newLabel[temp] = '%';
-    newLabel[temp+1] = '\0';
-    dimButton.changeLabel(newLabel);
-    dimButton.drawButton(false);
-}
-
-void checkUIConfig()
-{
-    static bool toggle_s = false;
-    int16_t x = 0;
-    int16_t y = 0;
-    if (getTouchXY(&x, &y))
-    {
-        if (backButton.contains(x,y))
-        {
-            toggle_s = toggle_s? false: true;
-            backButton.drawButton(toggle_s);
-            nextWindow_g = windowEcran1_c;
-            delay(100);
-        }
-        if (dimButton.contains(x,y))
-        {
-            adjustBacklight();
-            delay(100);
-        }
-        if (enableDcDcButton.contains(x,y))
-        {
-            enableDcDcButton.press(!enableDcDcButton.isPressed());
-            enableDcDcButton.changeLabel(enableDcDcButton.isPressed()?(char *)"on":(char *)"off");
-            enableDcDcButton.drawButton(enableDcDcButton.isPressed());
-            delay(100);
-        }
     }
 }
 
@@ -513,8 +304,16 @@ void loop(void) {
 
     switch(activeWindow_g)
     {
-        case windowEcran1_c: checkUIEcran1(); break;
-        //case windowConfig_c: checkUIConfig(); break;
+        case windowEcran1_c:
+        {
+            bool gotoConfig = false;
+            ecranPrincipal_g.checkUI(&gotoConfig);
+            if (gotoConfig)
+            {
+                nextWindow_g = windowConfig_c;
+            }
+            break;
+        }
         case windowConfig_c:
         {
             // For now config is simply a input voltage limit picker.
