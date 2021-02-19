@@ -18,13 +18,13 @@ void printFloatAt(float value, int width, int x, int y);
 
 // Reset button
 #define resetButtonX 200
-#define resetButtonY 200
+#define resetButtonY 215
 #define resetButtonW 40
 #define resetButtonH 40
 
 // DC-DC charger enabled button
 #define enableDcDcButtonX 278
-#define enableDcDcButtonY 170-20
+#define enableDcDcButtonY 170
 #define enableDcDcButtonW 40
 #define enableDcDcButtonH 31
 
@@ -117,6 +117,8 @@ void EcranPrincipal::checkUI(bool *goToConfigWindow)
             ampMeterStarter_m->resetAmpHour();
             ampMeterHouse_m->resetAmpHour();
             resetButton_s.drawButton(toggle_s);
+            drawStatic();
+            drawData();
             delay(100);
         }
         if (configButton_s.contains(x,y))
@@ -142,24 +144,40 @@ void EcranPrincipal::drawStatic()
         tft_m->fillScreen(ILI9341_BLACK);
         tft_m->drawRect(0,0,tft_m->width(),tft_m->height(), rgbTo565(155,155,155));
         tft_m->drawFastHLine(0,18,tft_m->width(), rgbTo565(155,155,155));
+
+        // Libe below "Starter House"
+        tft_m->drawFastHLine(0,18+25,tft_m->width(), rgbTo565(155,155,155));
+
+        tft_m->drawFastHLine(0,18+27+18,tft_m->width(), rgbTo565(90,90,90));
+        tft_m->drawFastHLine(0,18+27+(18*2),tft_m->width(), rgbTo565(90,90,90));
+        tft_m->drawFastHLine(0,18+27+(18*3),tft_m->width(), rgbTo565(90,90,90));
+        tft_m->drawFastHLine(0,18+27+(18*4),tft_m->width(), rgbTo565(90,90,90));
+        tft_m->drawFastHLine(0,18+25+(18*5)+1,tft_m->width(), rgbTo565(90,90,90));
+        tft_m->drawFastHLine(0,18+25+(18*6)+4,tft_m->width(), rgbTo565(90,90,90));
+
         tft_m->setTextSize(1);
         tft_m->setCursor(5, 15);
         tft_m->setTextColor(ILI9341_WHITE);  tft_m->setTextSize(1);
-        tft_m->println("Moniteur de batterie, v0.0");
+        tft_m->println("Moniteur de batterie, v0.1");
+
+
+        tft_m->setTextColor(ILI9341_WHITE);
+        tft_m->setTextSize(1, 1);
+        tft_m->setCursor(5, 33+25);
 
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("Volt:           V");
+        tft_m->println("            volt");
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("Curr:           A");
+        tft_m->println("            amp");
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("Pwr :           W");
+        tft_m->println("            watt");
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("AH  :           AH");
+        tft_m->println("            AH");
 
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("deltaT:         us");
+        tft_m->println(" ");
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("Time:            d h:m:s");
+        tft_m->println(" Time            d h:m:s");
 
         resetButton_s.drawButton(false);
         enableDcDcButton_s.drawButton(enableDcDcButton_s.isPressed());
@@ -170,29 +188,61 @@ void EcranPrincipal::drawStatic()
 
 void EcranPrincipal::drawData( )
 {
-    printFloatAt(ampMeterStarter_m->getAvgBusVolt(), 1, 70, 33);
-    printFloatAt(ampMeterStarter_m->getAvgCurrent(), 1, 70, 51);
-    printFloatAt(ampMeterStarter_m->getAvgPower(), 1, 70, 69);
-    printFloatAt(ampMeterStarter_m->getAmpHour(), 1, 70, 87);
-    printTimeFromMilliSec(millis() - ampMeterStarter_m->getTimeSinceReset(), 70, 123);
+    // The color of the column header is green when charging and red when discharging.
+    tft_m->setTextSize(1, 2);
+    tft_m->setCursor(25, 15+18+5);
+    if (ampMeterStarter_m->getAvgCurrent() < 0.0F)
+    {
+        tft_m->setTextColor(rgbTo565(60,225,70));    //green
+        //tft_m->print(ttt);
+    }
+    else
+    {
+        tft_m->setTextColor(rgbTo565(240,80,55));    // red
+        //tft_m->print(ttt);
+    }
+    tft_m->print("Starter");
+
+    tft_m->setCursor(230, tft_m->getCursorY());
+    if (ampMeterHouse_m->getAvgCurrent() < 0.0F)
+    {
+        tft_m->setTextColor(rgbTo565(60,225,70));    // green
+    }
+    else
+    {
+        tft_m->setTextColor(rgbTo565(240,80,55));    // red
+    }
+    tft_m->print("House");
+
+    printFloatAt(ampMeterStarter_m->getAvgBusVolt(), 1, 10, 33+25);
+    printFloatAt(ampMeterStarter_m->getAvgCurrent(), 1, 10, 51+25);
+    printFloatAt(ampMeterStarter_m->getAvgPower(), 1, 10, 69+25);
+    printFloatAt(ampMeterStarter_m->getAmpHour(), 1, 10, 87+25);
+
+    printFloatAt(ampMeterHouse_m->getAvgBusVolt(), 1, 210, 33+25);
+    printFloatAt(ampMeterHouse_m->getAvgCurrent(), 1, 210, 51+25);
+    printFloatAt(ampMeterHouse_m->getAvgPower(), 1, 210, 69+25);
+    printFloatAt(ampMeterHouse_m->getAmpHour(), 1, 210, 87+25);
+
+    printTimeFromMilliSec(millis() - ampMeterStarter_m->getTimeSinceReset(), 70, 123+25);
 }
 
 void EcranPrincipal::adjustBacklight()
 {
     char newLabel[10];
     uint16_t temp;
-    if (dimLevel_m > 64)
+    if (dimLevel_m > 80)
     {
-        dimLevel_m -= 64;
+        dimLevel_m -= 80;
     }
-    else if (dimLevel_m > 20)
+    else if (dimLevel_m > 9)
     {
         dimLevel_m = 0;
     }
     else
     {
         // Rollover to full power
-        dimLevel_m = 250;
+        dimLevel_m = 254;
     }
     analogWrite(pinDim_m, dimLevel_m);
     temp = dimLevel_m*100/255;

@@ -17,6 +17,7 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 #include <Adafruit_STMPE610.h>     // Touch screen
+#include "ILI9341_util.h"          // rgbTo565()
 
 // Touch screen calibration data for the raw touch data to the screen coordinates
 #ifndef NRF52
@@ -45,7 +46,7 @@ void printTimeFromMilliSec(unsigned long milliSec, int x, int y)
     float ttt;
     int ti;
 
-    tft.fillRect(x-4, y-12, 116, 20, ILI9341_BLUE);
+    tft.fillRect(x-4, y-13, 117, 20, rgbTo565(70,80,90));
     tft.setCursor(x,y);
 
     tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
@@ -80,7 +81,7 @@ void printFloatAt(float value, int textSizeY, int x, int y)
 {
     tft.setTextSize(1,textSizeY);
     tft.setTextColor(ILI9341_WHITE);
-    tft.fillRect(x, y-14-((textSizeY-1)*10), 100, 20+((textSizeY-1)*10), ILI9341_RED);
+    tft.fillRect(x, y-14-((textSizeY-1)*10), 100, 20+((textSizeY-1)*10), rgbTo565(6,80,120));
     char ttt[64];
 
     // Add minus sign when the integer part is zero.

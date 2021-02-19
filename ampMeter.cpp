@@ -122,7 +122,7 @@ float AmpMeter::getAvgBusVolt()
 
 float AmpMeter::getAvgCurrent()
 {
-    return avgCurrent_m / 1000;   // Amp
+    return avgCurrent_m / 1000.0;   // Amp
 }
 
 float AmpMeter::getAvgPower()

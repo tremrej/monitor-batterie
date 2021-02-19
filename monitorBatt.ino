@@ -126,8 +126,6 @@ void setup() {
     Serial.println("Touchscreen started."); 
   }
 
-
-
   // read diagnostics (optional but can help debug problems)
   uint8_t x = tft.readcommand8(ILI9341_RDMODE);
   Serial.print("Display Power Mode: 0x"); Serial.println(x, HEX);
@@ -156,7 +154,7 @@ void setup() {
     tft.setCursor(5, 20);
     tft.println("Failed to find INA219 chip");
     tft.println("Enter demo mode");
-    delay(1000);
+    delay(100);
   }
   else
   {
@@ -168,7 +166,7 @@ void setup() {
     tft.setCursor(5, 20);
     tft.println("Failed to find INA219 chip");
     tft.println("Enter demo mode");
-    delay(1000);
+    delay(200);
   }
   else
   {
