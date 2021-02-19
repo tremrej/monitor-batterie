@@ -61,9 +61,16 @@
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
 #define nbAvg 15
+//#define nbAvg 8
 
-AmpMeter ampMeterStarter_g(0x40);
-AmpMeter ampMeterHouse_g  (0x41);   // Bridge A0
+// Average period in micro seconds
+#define averagePeriod 2000000
+//#define averagePeriod 1000000
+
+AmpMeter ampMeterStarter_g     (0x40);
+AmpMeter ampMeterHouse_g       (0x41);   // Bridge A0
+AmpMeter ampMeterAlternator_g  (0x44);   // Bridge A1
+AmpMeter ampMeterSolar_g       (0x45);   // Bridge A0 & A1
 
 ChargerControl chargerControl_g(ampMeterStarter_g, ampMeterHouse_g,pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
@@ -144,11 +151,9 @@ void setup() {
 
   tft.setFont(&FreeMono9pt7b);
 
-  delay(500);
-
   // Create the buttons
 
-  if (! ampMeterStarter_g.init()) 
+  if (! ampMeterStarter_g.init(200.0, 0.100)) 
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -160,7 +165,7 @@ void setup() {
   {
       ampMeterStarter_g.start();
   }
-  if (! ampMeterHouse_g.init()) 
+  if (! ampMeterHouse_g.init(50, 0.075))
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -172,16 +177,40 @@ void setup() {
   {
       ampMeterHouse_g.start();
   }
+  if (! ampMeterAlternator_g.init(50, 0.075)) 
+  {
+    Serial.println("Failed to find INA219 chip");
+    tft.setCursor(5, 20);
+    tft.println("Failed to find INA219 chip");
+    tft.println("Enter demo mode");
+    delay(100);
+  }
+  else
+  {
+      ampMeterAlternator_g.start();
+  }
+  if (! ampMeterSolar_g.init(50, 0.075)) 
+  {
+    Serial.println("Failed to find INA219 chip");
+    tft.setCursor(5, 20);
+    tft.println("Failed to find INA219 chip");
+    tft.println("Enter demo mode");
+    delay(100);
+  }
+  else
+  {
+      ampMeterSolar_g.start();
+  }
 
   dcDcInVoltThresPicker_g.init(12.0);
   ecranPrincipal_g.init();
 
   // Setup measurement timer
 #ifdef ARDUINO_AVR_MEGA2560
-  Timer1.initialize(2000000/nbAvg); // micro second
+  Timer1.initialize(averagePeriod/nbAvg); // micro second
   Timer1.attachInterrupt(setMeasurementFlag);
 #elif NRF52
-  if (ITimer.attachInterruptInterval(2000000/nbAvg, setMeasurementFlag))
+  if (ITimer.attachInterruptInterval(averagePeriod/nbAvg, setMeasurementFlag))
   {
     Serial.print(F("Starting ITimer OK, millis() = ")); Serial.println(millis());
   }
@@ -252,10 +281,10 @@ void takeMeasurementAndDisplay(bool display)
         }
         loopCnt = 0;
 
-        // Toggle the led
-        digitalWrite(blinkingLed, !digitalRead(blinkingLed));
         
     }
+        // Toggle the led
+        digitalWrite(blinkingLed, !digitalRead(blinkingLed));
 
     if (deltaTTick)
     {

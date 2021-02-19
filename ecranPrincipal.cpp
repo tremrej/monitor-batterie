@@ -24,7 +24,7 @@ void printFloatAt(float value, int width, int x, int y);
 
 // DC-DC charger enabled button
 #define enableDcDcButtonX 278
-#define enableDcDcButtonY 170
+#define enableDcDcButtonY 215
 #define enableDcDcButtonW 40
 #define enableDcDcButtonH 31
 
@@ -148,6 +148,7 @@ void EcranPrincipal::drawStatic()
         // Libe below "Starter House"
         tft_m->drawFastHLine(0,18+25,tft_m->width(), rgbTo565(155,155,155));
 
+        // 18 is the increment of new line for font used (FreeMono9pt7b)
         tft_m->drawFastHLine(0,18+27+18,tft_m->width(), rgbTo565(90,90,90));
         tft_m->drawFastHLine(0,18+27+(18*2),tft_m->width(), rgbTo565(90,90,90));
         tft_m->drawFastHLine(0,18+27+(18*3),tft_m->width(), rgbTo565(90,90,90));

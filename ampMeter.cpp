@@ -16,7 +16,7 @@ AmpMeter::~AmpMeter()
 {
 }
 
-bool AmpMeter::init()
+bool AmpMeter::init(float shuntAmp, float shuntVolt)
 {
     if (! ina219_mp->begin()) 
     {
@@ -24,7 +24,8 @@ bool AmpMeter::init()
     }
     else
     {
-        ina219_mp->setCalibration_16V_50A_75mv();
+        //ina219_mp->setCalibration_16V_50A_75mv();
+        ina219_mp->setCalibration_16V( shuntAmp, shuntVolt);
         demo = false;
     }
     start();
@@ -78,10 +79,26 @@ unsigned long AmpMeter::tick()
         float demoVolt = 12.05;
         float demoCurrent = -2000.0;    // mA
 
-        if (address_m != 0x40)   // Not Starter batterie
+        if (address_m == 0x40)   // Starter batterie
+        {
+            demoVolt = 12.05;
+            demoCurrent = -2000.0;    // mA
+        }
+        if (address_m == 0x41)   // House batterie
         {
             demoVolt = 12.35;
             demoCurrent = 60000.0;    // mA
+        }
+        if (address_m == 0x44)   // Alternator
+        {
+            demoVolt = 12.35;
+            demoCurrent = -2500.0;    // mA
+        }
+
+        if (address_m == 0x45)   // Solar charger
+        {
+            demoVolt = 12.05;
+            demoCurrent = -1500.0;    // mA
         }
         cumulBusVolt_m    += demoVolt;
         cumulCurrent_m    += demoCurrent;
