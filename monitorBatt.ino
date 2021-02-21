@@ -60,7 +60,7 @@
 
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
-#define nbAvg 15
+#define nbAvg 14
 //#define nbAvg 8
 
 // Average period in micro seconds
@@ -259,37 +259,35 @@ void processChangeOfWindow(ActiveWindow_e window)
 
 void takeMeasurementAndDisplay(bool display)
 {
-    static int loopCnt = 0;
-    unsigned long deltaTTick = 0;
+    static int avgCnt = 0;
+    unsigned long deltaTStarter = 0;
+    unsigned long deltaTHouse = 0;
 
-    deltaTTick = ampMeterStarter_g.tick();   // Take a measurement
-    deltaTTick = ampMeterHouse_g.tick();   // Take a measurement
-    if (deltaTTick == 0)
+    deltaTStarter = ampMeterStarter_g.tick();   // Take a measurement
+    deltaTHouse   = ampMeterHouse_g.tick();   // Take a measurement
+    if (deltaTStarter == 0)
     {
-        Serial.print("Data not ready from INA219, time (ms): ");
+        Serial.print("Data not ready from starter IA219, time (ms): ");
         Serial.println(millis());
     }
-
-    if (deltaTTick && loopCnt % nbAvg == 0)
+    else
     {
-        ampMeterStarter_g.average();  // Calculate average since last average.
-        ampMeterHouse_g.average();  // Calculate average since last average.
-        //if (activeWindow_g == windowEcran1_c)
-        if (display)
+       // Increment the loop count only if we got valid (new) date from INA219.
+       avgCnt++;
+        if (avgCnt % nbAvg == 0)
         {
-            ecranPrincipal_g.drawData();
+            ampMeterStarter_g.average();  // Calculate average since last average.
+            ampMeterHouse_g.average();  // Calculate average since last average.
+            //if (activeWindow_g == windowEcran1_c)
+            if (display)
+            {
+                ecranPrincipal_g.drawData();
+            }
+            avgCnt = 0;
+
+            // Toggle the led
+            digitalWrite(blinkingLed, !digitalRead(blinkingLed));
         }
-        loopCnt = 0;
-
-        
-    }
-        // Toggle the led
-        digitalWrite(blinkingLed, !digitalRead(blinkingLed));
-
-    if (deltaTTick)
-    {
-        // Increment the loop count only if we got valid (new) date from INA219.
-        loopCnt++;
     }
 }
 

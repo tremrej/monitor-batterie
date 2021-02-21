@@ -60,14 +60,20 @@ unsigned long AmpMeter::tick()
     unsigned long start = micros();
     unsigned long timeSpent = 0;
 
+    bool dataReady = false;
+    float volt = ina219_mp->getBusVoltage_V(&dataReady);    // volts
+    float curr = ina219_mp->getCurrent_mA();      // milli Amp
+    float watt = ina219_mp->getPower_mW();        // milli Watt
+
     if (!demo)
     {
-        bool dataReady = false;
-        cumulBusVolt_m    += ina219_mp->getBusVoltage_V(&dataReady);    // volts
-        cumulCurrent_m    += ina219_mp->getCurrent_mA();      // milli Amp
-        cumulPower_m      += ina219_mp->getPower_mW();        // milli Watt
-
-        if (!dataReady)
+        if (dataReady)
+        {
+            cumulBusVolt_m    += volt;
+            cumulCurrent_m    += curr;
+            cumulPower_m      += watt;
+        }
+        else
         {
             // Returns 0 to indicate we read old data.
             return 0;
