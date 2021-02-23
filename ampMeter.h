@@ -38,6 +38,7 @@ public:
 
     void resetAmpHour();
 
+    float getBusVolt();
     float getAvgBusVolt();
     float getAvgCurrent();
     float getAvgPower();

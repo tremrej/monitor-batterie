@@ -138,6 +138,12 @@ unsigned long AmpMeter::average()
     return avgDuration_m;
 }
 
+float AmpMeter::getBusVolt()
+{
+
+    bool dataReady = false;
+    return ina219_mp->getBusVoltage_V(&dataReady);
+}
 float AmpMeter::getAvgBusVolt()
 {
     return avgBusVolt_m;

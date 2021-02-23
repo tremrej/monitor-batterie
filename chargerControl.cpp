@@ -26,6 +26,8 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , holdOffTimerId_m(-1)
     , ignitionOn_m (false)
     , alternatorOn_m (false)
+    , selectorBothOn_m (false)
+    , voltageStartOfCharge_m (0.0)
 
 {
     // Definition of states
@@ -38,15 +40,17 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     fsm_m = new Fsm(stateIdle_m);
 
     // Definition of the possible transition
-    fsm_m->add_transition( stateIdle_m,           stateIgnitionOn_m,     ignitionTurnedOn_c,      NULL);
-    fsm_m->add_transition( stateIdle_m,           stateAlternatorOn_m,   ignitionTurnedOnAlterOn_c, &startHoldoffTimer);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
-    fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateAlternatorOn_m,   alternatorTurnedOn_c,    &startHoldoffTimer);
-    fsm_m->add_transition( stateAlternatorOn_m,   stateChargerEnabled_m, chargerHoldoffExpired_c, &startCharger);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateChargerEnabled_m, chargerHoldoffExpired_c, &startCharger);
-    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           alternatorTurnedOff_c,   &stopCharger);
-    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           ignitionTurnedOff_c,     &stopCharger);
+    fsm_m->add_transition( stateIdle_m,           stateIgnitionOn_m,     ignitionTurnedOn_c,             &stopCharger);
+    fsm_m->add_transition( stateIdle_m,           stateAlternatorOn_m,   ignitionTurnedOnAlterOn_c,      &startHoldoffTimer);
+    fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
+    fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
+    fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
+    fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
+    fsm_m->add_transition( stateIgnitionOn_m,     stateAlternatorOn_m,   alternatorTurnedOn_c,           &startHoldoffTimer);
+    fsm_m->add_transition( stateAlternatorOn_m,   stateChargerEnabled_m, chargerHoldoffExpired_c,        &startCharger);
+    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           alternatorTurnedOff_c,          &stopCharger);
+    //fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
+    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
 
     // Set the pointer to the singleton charge controller.
     cc_g = this;
@@ -71,7 +75,7 @@ void ChargerControl::tick( )
     sTimerEngine_m.run();
 
     // Check ignition key
-    if (digitalRead(pinIgnition_m) == HIGH)
+    if (digitalRead(pinIgnition_m) == HIGH && !selectorBothOn_m)
     {
         if (!ignitionOn_m)
         {
@@ -130,14 +134,21 @@ void ChargerControl::tick( )
             delay(10);
         }
     }
-}
 
-void ChargerControl::checkAlternator()
-{
-    if (cc_g->ampMeterStarter_m->getAvgCurrent() < -1.0)
+    // Detection of battery selector to both (all, 1+2).
+    // TODO Refine the charge voltage slope detection.
+    if ((ampMeterStarter_m->getAvgBusVolt() - ampMeterHouse_m->getAvgBusVolt() < 0.2) &&    // TODO Replace 0.2 by configurable value
+         (ampMeterHouse_m->getAvgBusVolt() - voltageStartOfCharge_m < 0.3))    // Charge voltage slope detection
     {
-        Serial.println("Alternator is already on");
-        cc_g->fsm_m->trigger(alternatorTurnedOn_c);
+        // Selector on Both
+        fsm_m->trigger(batterieSelectorAllDetected_c);
+        selectorBothOn_m = true;
+    }
+    else
+    {
+        // Selector not on Both
+        //fsm_m->trigger(batterieSelectorNotOnAllDetected_c);
+        selectorBothOn_m = false;
     }
 }
 
@@ -178,6 +189,8 @@ void ChargerControl::stopCharger( )
 void ChargerControl::startCharger( )
 {
     // Start charger
+    // save voltage of charging batterie, i.e. house in order to calculate slope of charge
+    cc_g->voltageStartOfCharge_m = cc_g->ampMeterHouse_m->getAvgBusVolt();
     digitalWrite(cc_g->pinRelayDcDcEnable_m, HIGH);
     Serial.println("Start charger");
 }

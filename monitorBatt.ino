@@ -60,12 +60,14 @@
 
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
-#define nbAvg 14
-//#define nbAvg 8
+//#define nbAvg 14
+#define nbAvg 7
+//#define nbAvg 3
 
 // Average period in micro seconds
-#define averagePeriod 2000000
-//#define averagePeriod 1000000
+//#define averagePeriod 2000000
+#define averagePeriod 1000000
+//#define averagePeriod 600000
 
 AmpMeter ampMeterStarter_g     (0x40);
 AmpMeter ampMeterHouse_g       (0x41);   // Bridge A0
@@ -278,7 +280,6 @@ void takeMeasurementAndDisplay(bool display)
         {
             ampMeterStarter_g.average();  // Calculate average since last average.
             ampMeterHouse_g.average();  // Calculate average since last average.
-            //if (activeWindow_g == windowEcran1_c)
             if (display)
             {
                 ecranPrincipal_g.drawData();

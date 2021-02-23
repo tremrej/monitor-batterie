@@ -35,6 +35,7 @@ public:
         alternatorTurnedOff_c,
         chargerHoldoffExpired_c,
         batterieSelectorAllDetected_c,
+        batterieSelectorNotOnAllDetected_c,
     };
 
     ChargerControl( AmpMeter &ampMeterStarter
@@ -55,7 +56,6 @@ private:
     static void holdoffTimerExpired();
     static void stopCharger();
     static void startCharger();
-    static void checkAlternator();
 
     AmpMeter *ampMeterStarter_m;
     AmpMeter *ampMeterHouse_m;
@@ -77,6 +77,9 @@ private:
     // Local state
     bool ignitionOn_m;
     bool alternatorOn_m;
+    bool selectorBothOn_m;
+
+    float voltageStartOfCharge_m;
 
 };
 
