@@ -20,6 +20,8 @@ public:
     EcranPrincipal( Adafruit_GFX &tft
                   , AmpMeter &ampMeterStarter
                   , AmpMeter &ampMeterHouse
+                  , AmpMeter &ampMeterAlternator
+                  , AmpMeter &ampMeterSolar
                   , int pinDim
                   , int pinIgnition
                   , int pinRelayDcDcEnable
@@ -49,6 +51,8 @@ private:
 
     AmpMeter *ampMeterStarter_m;
     AmpMeter *ampMeterHouse_m;
+    AmpMeter *ampMeterAlternator_m;
+    AmpMeter *ampMeterSolar_m;
     int       pinDim_m;
     int       pinIgnition_m;
     int       pinRelayDcDcEnable_m;

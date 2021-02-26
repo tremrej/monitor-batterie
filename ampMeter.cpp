@@ -98,13 +98,13 @@ unsigned long AmpMeter::tick()
         if (address_m == 0x44)   // Alternator
         {
             demoVolt = 12.35;
-            demoCurrent = -2500.0;    // mA
+            demoCurrent = 2250.0;    // mA
         }
 
         if (address_m == 0x45)   // Solar charger
         {
             demoVolt = 12.05;
-            demoCurrent = -1500.0;    // mA
+            demoCurrent = 1350.0;    // mA
         }
         cumulBusVolt_m    += demoVolt;
         cumulCurrent_m    += demoCurrent;

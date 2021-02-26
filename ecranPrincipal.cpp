@@ -49,6 +49,8 @@ Adafruit_GFX_Button EcranPrincipal::dimButton_s        = Adafruit_GFX_Button();
 EcranPrincipal::EcranPrincipal( Adafruit_GFX &tft
                               , AmpMeter &ampMeterStarter
                               , AmpMeter &ampMeterHouse
+                              , AmpMeter &ampMeterAlternator
+                              , AmpMeter &ampMeterSolar
                               , int pinDim
                               , int pinIgnition
                               , int pinRelayDcDcEnable
@@ -56,6 +58,8 @@ EcranPrincipal::EcranPrincipal( Adafruit_GFX &tft
     : tft_m(&tft)
     , ampMeterStarter_m(&ampMeterStarter)
     , ampMeterHouse_m  (&ampMeterHouse)
+    , ampMeterAlternator_m  (&ampMeterAlternator)
+    , ampMeterSolar_m  (&ampMeterSolar)
     , pinDim_m         (pinDim)
     , pinIgnition_m    (pinIgnition)
     , pinRelayDcDcEnable_m (pinRelayDcDcEnable)
@@ -176,7 +180,9 @@ void EcranPrincipal::drawStatic()
         tft_m->println("            AH");
 
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println(" ");
+        tft_m->println("Alternator           amp");
+        tft_m->setCursor(5, tft_m->getCursorY());
+        tft_m->println("     Solar           amp");
         tft_m->setCursor(5, tft_m->getCursorY());
         tft_m->println(" Time            d h:m:s");
 
@@ -225,7 +231,10 @@ void EcranPrincipal::drawData( )
     printFloatAt(ampMeterHouse_m->getAvgPower(), 1, 210, 69+25);
     printFloatAt(ampMeterHouse_m->getAmpHour(), 1, 210, 87+25);
 
-    printTimeFromMilliSec(millis() - ampMeterStarter_m->getTimeSinceReset(), 70, 123+25);
+    printFloatAt(ampMeterAlternator_m->getAvgCurrent(), 1, 118, 87+25+18);
+    printFloatAt(ampMeterSolar_m->getAvgCurrent(),      1, 118, 87+25+18+18);
+
+    printTimeFromMilliSec(millis() - ampMeterStarter_m->getTimeSinceReset(), 70, 123+25+(18*1));
 }
 
 void EcranPrincipal::adjustBacklight()

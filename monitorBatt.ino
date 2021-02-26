@@ -15,6 +15,10 @@
 #include "floatPicker.h"
 #include "chargerControl.h"
 #include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
+#include "persistent.h"
+//#include "Adafruit_LittleFS.h"  // Source ~/.arduino15/packages/adafruit/hardware/nrf52/0.21.0/libraries/Adafruit_LittleFS/src
+//#include "EEPROMex.h"
+//#include "EEPROMVar.h"
 
 // Board supported
 // =================================================
@@ -76,6 +80,8 @@ AmpMeter ampMeterSolar_g       (0x45);   // Bridge A0 & A1
 
 ChargerControl chargerControl_g(ampMeterStarter_g, ampMeterHouse_g,pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
+Persistent persistent_g = Persistent();
+
 //ChargeControler chargeControler_gg(ampMeterStarter_g, ampMeterHouse_g, pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
@@ -87,6 +93,8 @@ FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThre
 EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
                                                  , ampMeterStarter_g
                                                  , ampMeterHouse_g
+                                                 , ampMeterAlternator_g
+                                                 , ampMeterSolar_g
                                                  , dimPin
                                                  , pinIgnition
                                                  , pinDcDcEnabled
@@ -123,6 +131,9 @@ void setMeasurementFlag()
 void setup() {
   Serial.begin(115200);
   Serial.println("Moniteur de batterie, V0.0"); 
+
+  persistent_g.init();
+  dcDcInVoltThresPicker_g.init(persistent_g.getInputVoltThreshold());
  
   tft.begin();
   tft.setRotation(1);
@@ -204,7 +215,7 @@ void setup() {
       ampMeterSolar_g.start();
   }
 
-  dcDcInVoltThresPicker_g.init(12.0);
+//  dcDcInVoltThresPicker_g.init(12.0);
   ecranPrincipal_g.init();
 
   // Setup measurement timer
@@ -264,9 +275,13 @@ void takeMeasurementAndDisplay(bool display)
     static int avgCnt = 0;
     unsigned long deltaTStarter = 0;
     unsigned long deltaTHouse = 0;
+    unsigned long deltaTAlternator = 0;
+    unsigned long deltaTSolar = 0;
 
-    deltaTStarter = ampMeterStarter_g.tick();   // Take a measurement
-    deltaTHouse   = ampMeterHouse_g.tick();   // Take a measurement
+    deltaTStarter      = ampMeterStarter_g.tick();   // Take a measurement
+    deltaTHouse        = ampMeterHouse_g.tick();   // Take a measurement
+    deltaTAlternator   = ampMeterAlternator_g.tick();   // Take a measurement
+    deltaTSolar        = ampMeterSolar_g.tick();   // Take a measurement
     if (deltaTStarter == 0)
     {
         Serial.print("Data not ready from starter IA219, time (ms): ");
@@ -280,6 +295,8 @@ void takeMeasurementAndDisplay(bool display)
         {
             ampMeterStarter_g.average();  // Calculate average since last average.
             ampMeterHouse_g.average();  // Calculate average since last average.
+            ampMeterAlternator_g.average();  // Calculate average since last average.
+            ampMeterSolar_g.average();  // Calculate average since last average.
             if (display)
             {
                 ecranPrincipal_g.drawData();
@@ -342,11 +359,16 @@ void loop(void) {
         }
         case windowConfig_c:
         {
+            float ttt = dcDcInVoltThresPicker_g.getValue();
             // For now config is simply a input voltage limit picker.
             if (dcDcInVoltThresPicker_g.checkUI())
             {
                 // Value saved. Let's go back to the main window.
                 nextWindow_g = windowEcran1_c;
+            }
+            if (ttt != dcDcInVoltThresPicker_g.getValue())
+            {
+                persistent_g.setInputVoltThreshold(dcDcInVoltThresPicker_g.getValue());
             }
             break;
         }
