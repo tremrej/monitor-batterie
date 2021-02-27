@@ -12,10 +12,13 @@
 #include "Fonts/FreeMono9pt7b.h"
 #include "ampMeter.h"
 #include "ecranPrincipal.h"
+#include "ecranConfig.h"
 #include "floatPicker.h"
+#include "radioButton.h"
 #include "chargerControl.h"
 #include "ILI9341_util.h"   // printFloatAt(), getTouchXY()
 #include "persistent.h"
+#include "monitorBatt.h"    // ActiveWindow_e
 //#include "Adafruit_LittleFS.h"  // Source ~/.arduino15/packages/adafruit/hardware/nrf52/0.21.0/libraries/Adafruit_LittleFS/src
 //#include "EEPROMex.h"
 //#include "EEPROMVar.h"
@@ -88,7 +91,14 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
-FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "DcDcInVoltThres", 11.0, 13.0, 0.01);
+char *charModeChoice[] = { (char *) "auto"
+                         , (char *) "disabled"
+                         , (char *) "on"};
+
+FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "Input volt threshold", 11.0, 13.0, 0.01);
+FloatPicker chargeStartDelay_g      = FloatPicker (tft, (char *) "Delai de demarrage", 5.0, 180.0, 1.0);
+FloatPicker allDeadZone_g           = FloatPicker (tft, (char *) "ALl selector deadzone", 0.05, 2.0, 0.01);
+RadioButton chargeMode_g            = RadioButton (tft, (char *) "Charge mode", charModeChoice, chargeModeMax_c);
 
 EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
                                                  , ampMeterStarter_g
@@ -100,18 +110,16 @@ EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
                                                  , pinDcDcEnabled
                                                  , pinDcDcSlow);
 
+EcranConfig ecranConfig_g = EcranConfig( tft
+                                       , persistent_g
+                                       , dcDcInVoltThresPicker_g
+                                       , chargeStartDelay_g
+                                       , allDeadZone_g);
+
 
 #ifdef NRF52
   NRF52Timer ITimer(NRF_TIMER_1);
 #endif
-
-enum ActiveWindow_e {
-    windowEcran1_c,
-    windowConfig_c,
-    windowPickDcDcInVoltThres_c,
-    windowPickDcDcDelay_c,
-    windowPickAllSelectDeadzone_c,
-};
 
 ActiveWindow_e activeWindow_g = windowEcran1_c;
 ActiveWindow_e nextWindow_g   = windowEcran1_c;
@@ -134,6 +142,9 @@ void setup() {
 
   persistent_g.init();
   dcDcInVoltThresPicker_g.init(persistent_g.getInputVoltThreshold());
+  chargeStartDelay_g.init(persistent_g.getDelay());
+  allDeadZone_g.init(persistent_g.getAllDeadZone());
+  chargeMode_g.init(0);
  
   tft.begin();
   tft.setRotation(1);
@@ -215,8 +226,8 @@ void setup() {
       ampMeterSolar_g.start();
   }
 
-//  dcDcInVoltThresPicker_g.init(12.0);
   ecranPrincipal_g.init();
+  ecranConfig_g.init();
 
   // Setup measurement timer
 #ifdef ARDUINO_AVR_MEGA2560
@@ -261,9 +272,26 @@ void processChangeOfWindow(ActiveWindow_e window)
             ecranPrincipal_g.drawData();
             break;
         }
+//        case windowPickDcDcInVoltThres_c:
+//        {
+//            dcDcInVoltThresPicker_g.drawStatic();
+//            break;
+//        }
+//        case windowPickDcDcDelay_c:
+//        {
+//            chargeStartDelay_g.drawStatic();
+//            break;
+//        }
         case windowConfig_c:
         {
-            dcDcInVoltThresPicker_g.drawStatic();
+            ecranConfig_g.drawStatic();
+            ecranConfig_g.drawData();
+            break;
+        }
+        case windowChargeMode_c:
+        {
+            chargeMode_g.drawStatic();
+            chargeMode_g.drawData();
             break;
         }
         default: break;
@@ -274,14 +302,11 @@ void takeMeasurementAndDisplay(bool display)
 {
     static int avgCnt = 0;
     unsigned long deltaTStarter = 0;
-    unsigned long deltaTHouse = 0;
-    unsigned long deltaTAlternator = 0;
-    unsigned long deltaTSolar = 0;
 
     deltaTStarter      = ampMeterStarter_g.tick();   // Take a measurement
-    deltaTHouse        = ampMeterHouse_g.tick();   // Take a measurement
-    deltaTAlternator   = ampMeterAlternator_g.tick();   // Take a measurement
-    deltaTSolar        = ampMeterSolar_g.tick();   // Take a measurement
+                         ampMeterHouse_g.tick();   // Take a measurement
+                         ampMeterAlternator_g.tick();   // Take a measurement
+                         ampMeterSolar_g.tick();   // Take a measurement
     if (deltaTStarter == 0)
     {
         Serial.print("Data not ready from starter IA219, time (ms): ");
@@ -350,14 +375,15 @@ void loop(void) {
         case windowEcran1_c:
         {
             bool gotoConfig = false;
-            ecranPrincipal_g.checkUI(&gotoConfig);
-            if (gotoConfig)
-            {
-                nextWindow_g = windowConfig_c;
-            }
+            nextWindow_g = ecranPrincipal_g.checkUI();
             break;
         }
         case windowConfig_c:
+        {
+            nextWindow_g = ecranConfig_g.checkUI();
+            break;
+        }
+        case windowPickDcDcInVoltThres_c:
         {
             float ttt = dcDcInVoltThresPicker_g.getValue();
             // For now config is simply a input voltage limit picker.
@@ -369,6 +395,14 @@ void loop(void) {
             if (ttt != dcDcInVoltThresPicker_g.getValue())
             {
                 persistent_g.setInputVoltThreshold(dcDcInVoltThresPicker_g.getValue());
+            }
+            break;
+        }
+        case windowChargeMode_c:
+        {
+            if ( chargeMode_g.checkUI())
+            {
+                nextWindow_g = windowEcran1_c;
             }
             break;
         }

@@ -6,6 +6,7 @@
 #include "Adafruit_ILI9341.h"    // ILI9341_BLACK
 #include "ILI9341_util.h"        // getTouchXY()
 #include "ecranPrincipal.h"
+#include "monitorBatt.h"
 
 // External declaration
 void printFloatAt(float value, int width, int x, int y);
@@ -106,13 +107,14 @@ void EcranPrincipal::init()
     configButton_s.press(false);
 }
 
-void EcranPrincipal::checkUI(bool *goToConfigWindow)
+ActiveWindow_e EcranPrincipal::checkUI()
 {
     static bool toggle_s = false;
     static bool toggle2_s = false;
     int16_t x = 0;
     int16_t y = 0;
-    *goToConfigWindow = false;
+    ActiveWindow_e returnedWindow = windowEcran1_c;
+
     if (getTouchXY(&x, &y))
     {
         if (resetButton_s.contains(x,y))
@@ -123,6 +125,7 @@ void EcranPrincipal::checkUI(bool *goToConfigWindow)
             resetButton_s.drawButton(toggle_s);
             drawStatic();
             drawData();
+            returnedWindow = windowEcran1_c;
             delay(100);
         }
         if (configButton_s.contains(x,y))
@@ -130,8 +133,13 @@ void EcranPrincipal::checkUI(bool *goToConfigWindow)
             toggle2_s = toggle2_s? false: true;
             configButton_s.press(toggle2_s);
             configButton_s.drawButton(toggle2_s);
-            //nextWindow_g = windowConfig_c;
-            *goToConfigWindow = true;
+            returnedWindow = windowConfig_c;
+            delay(100);
+        }
+        if (enableDcDcButton_s.contains(x,y))
+        {
+            enableDcDcButton_s.drawButton();
+            returnedWindow = windowChargeMode_c;
             delay(100);
         }
         if (dimButton_s.contains(x,y))
@@ -140,6 +148,7 @@ void EcranPrincipal::checkUI(bool *goToConfigWindow)
             delay(100);
         }
     }
+    return returnedWindow;
 }
 
 
@@ -149,7 +158,7 @@ void EcranPrincipal::drawStatic()
         tft_m->drawRect(0,0,tft_m->width(),tft_m->height(), rgbTo565(155,155,155));
         tft_m->drawFastHLine(0,18,tft_m->width(), rgbTo565(155,155,155));
 
-        // Libe below "Starter House"
+        // Line below "Starter House"
         tft_m->drawFastHLine(0,18+25,tft_m->width(), rgbTo565(155,155,155));
 
         // 18 is the increment of new line for font used (FreeMono9pt7b)

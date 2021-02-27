@@ -8,6 +8,7 @@
 
 #include "Adafruit_GFX.h"    // Adafruit_GFX_Button
 #include "ampMeter.h"        // AmpMeter
+#include "monitorBatt.h"
 
 // ==================================================================================
 //  @class EcranPrincipal
@@ -30,9 +31,7 @@ public:
 
     void init();
 
-    // Check the UI.
-    // @retval next window
-    void checkUI(bool *goToConfigWindow);
+    ActiveWindow_e checkUI();
 
     void drawStatic();
     void drawData();
