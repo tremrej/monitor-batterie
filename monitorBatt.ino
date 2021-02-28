@@ -374,7 +374,6 @@ void loop(void) {
     {
         case windowEcran1_c:
         {
-            bool gotoConfig = false;
             nextWindow_g = ecranPrincipal_g.checkUI();
             break;
         }

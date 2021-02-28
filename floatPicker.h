@@ -9,6 +9,13 @@
 
 #include "Adafruit_GFX.h"    // Adafruit_GFX_Button
 
+enum Action_e {
+    save_c,
+    cancel_c,
+    noOp_c
+};
+
+
 // ==================================================================================
 //  @class FloatPicker
 // 
@@ -32,9 +39,14 @@ public:
     // Check the UI and return the current value.
     // @retval true when "saved" pressed
     // Use getValue() to get the "saved" value.
-    bool checkUI();
+    Action_e checkUI();
+
+    // These two operator are not compiling...
+    //operator float () { return currentValue_m; }
+    //FloatPicker &operator=(float val) { currentValue_m = val; return *this; }
 
     float getValue();
+    float setValue(float value);
 
     bool drawStatic();
     bool drawData();
@@ -49,9 +61,10 @@ private:
     float increment_m;
     float currentValue_m;
 
-    static Adafruit_GFX_Button upButton_s;
-    static Adafruit_GFX_Button downButton_s;
-    static Adafruit_GFX_Button saveButton_s;
+    Adafruit_GFX_Button upButton_m;
+    Adafruit_GFX_Button downButton_m;
+    Adafruit_GFX_Button saveButton_m;
+    Adafruit_GFX_Button cancelButton_m;
 };
 
 #endif  // floatPicker_h

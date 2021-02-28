@@ -158,47 +158,60 @@ ActiveWindow_e EcranConfig::checkUI()
     }
     else if (activeWindow_m == windowPickDcDcInVoltThres_c)
     {
-        float ttt = inVoltThreshold_m->getValue();
-
-        if (inVoltThreshold_m->checkUI())
+        Action_e action = inVoltThreshold_m->checkUI();
+        if (action == save_c ||
+            action == cancel_c)
         {
             // Value picked. Let's go back to the main window.
             nextWindow_m = windowConfig_c;
         }
-        if (ttt != inVoltThreshold_m->getValue())
+        if (action == save_c)
         {
             // Save the new value.
             persistent_m->setInputVoltThreshold(inVoltThreshold_m->getValue());
         }
+        else if (action == cancel_c)
+        {
+            inVoltThreshold_m->setValue(persistent_m->getInputVoltThreshold());
+        }
     }
     else if (activeWindow_m == windowPickDcDcDelay_c)
     {
-        float ttt = chargeStartDelay_m->getValue();
-
-        if (chargeStartDelay_m->checkUI())
+        Action_e action = chargeStartDelay_m->checkUI();
+        if (action == save_c ||
+            action == cancel_c)
         {
             // Value picked. Let's go back to the main window.
             nextWindow_m = windowConfig_c;
         }
-        if (ttt != chargeStartDelay_m->getValue())
+        if (action == save_c)
         {
             // Save the new value.
             persistent_m->setDelay(chargeStartDelay_m->getValue());
         }
+        else if (action == cancel_c)
+        {
+            // Put back the orginal value
+            chargeStartDelay_m->setValue(persistent_m->getDelay());
+        }
     }
     else if (activeWindow_m == windowPickAllSelectDeadzone_c)
     {
-        float ttt = allDeadZone_m->getValue();
-
-        if (allDeadZone_m->checkUI())
+        Action_e action = allDeadZone_m->checkUI();
+        if (action == save_c ||
+            action == cancel_c)
         {
             // Value picked. Let's go back to the main window.
             nextWindow_m = windowConfig_c;
         }
-        if (ttt != allDeadZone_m->getValue())
+        if (action == save_c)
         {
             // Save the new value.
             persistent_m->setAllDeadZone(allDeadZone_m->getValue());
+        }
+        else if (action == cancel_c)
+        {
+            allDeadZone_m->setValue(persistent_m->getAllDeadZone());
         }
     }
 
