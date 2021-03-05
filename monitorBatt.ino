@@ -68,12 +68,12 @@
 // The number of reading to average is fine tune in order to make sure we always read new data.
 // We use the "conversion ready" bit from the INA219.
 //#define nbAvg 14
-#define nbAvg 7
+#define nbAvg 6
 //#define nbAvg 3
 
 // Average period in micro seconds
 //#define averagePeriod 2000000
-#define averagePeriod 1000000
+#define averagePeriod   1000000
 //#define averagePeriod 600000
 
 AmpMeter ampMeterStarter_g     (0x40);
@@ -81,9 +81,14 @@ AmpMeter ampMeterHouse_g       (0x41);   // Bridge A0
 AmpMeter ampMeterAlternator_g  (0x44);   // Bridge A1
 AmpMeter ampMeterSolar_g       (0x45);   // Bridge A0 & A1
 
-ChargerControl chargerControl_g(ampMeterStarter_g, ampMeterHouse_g,pinIgnition, pinDcDcEnabled, pinDcDcSlow);
-
 Persistent persistent_g = Persistent();
+
+ChargerControl chargerControl_g( ampMeterStarter_g
+                               , ampMeterHouse_g
+                               , ampMeterAlternator_g
+                               , persistent_g
+                               , pinIgnition, pinDcDcEnabled, pinDcDcSlow);
+
 
 //ChargeControler chargeControler_gg(ampMeterStarter_g, ampMeterHouse_g, pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
@@ -177,7 +182,7 @@ void setup() {
 
   // Create the buttons
 
-  if (! ampMeterStarter_g.init(200.0, 0.100)) 
+  if (! ampMeterStarter_g.init(200.0, 0.0005))
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -189,7 +194,7 @@ void setup() {
   {
       ampMeterStarter_g.start();
   }
-  if (! ampMeterHouse_g.init(50, 0.075))
+  if (! ampMeterHouse_g.init(200.0, 0.0005))
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -201,7 +206,7 @@ void setup() {
   {
       ampMeterHouse_g.start();
   }
-  if (! ampMeterAlternator_g.init(50, 0.075)) 
+  if (! ampMeterAlternator_g.init(50.0, 0.001479*3.3/4.0))
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -213,7 +218,7 @@ void setup() {
   {
       ampMeterAlternator_g.start();
   }
-  if (! ampMeterSolar_g.init(50, 0.075)) 
+  if (! ampMeterSolar_g.init(50.0, 0.0015)) 
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -256,7 +261,7 @@ void setup() {
   pinMode(pinDcDcEnabled, OUTPUT);
   digitalWrite(pinDcDcEnabled, LOW);
   pinMode(pinDcDcSlow, OUTPUT);
-  digitalWrite(pinDcDcSlow, HIGH);
+  digitalWrite(pinDcDcSlow, LOW);
   pinMode(pinIgnition, INPUT);
 
   chargerControl_g.init();

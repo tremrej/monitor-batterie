@@ -15,11 +15,15 @@ ChargerControl *cc_g = NULL;
 
 ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
                               , AmpMeter &ampMeterHouse
+                              , AmpMeter &ampMeterAlternator
+                              , Persistent &persistent
                               , int pinIgnition
                               , int pinRelayDcDcEnable
                               , int pinRelayDcDcSlow)
     : ampMeterStarter_m(&ampMeterStarter)
     , ampMeterHouse_m  (&ampMeterHouse)
+    , ampMeterAlternator_m  (&ampMeterAlternator)
+    , persistent_m (&persistent)
     , pinIgnition_m    (pinIgnition)
     , pinRelayDcDcEnable_m (pinRelayDcDcEnable)
     , pinRelayDcDcSlow_m   (pinRelayDcDcSlow)
@@ -106,8 +110,8 @@ void ChargerControl::tick( )
     }
 
     // Check state of alternator
-    float starterBattCurrent = ampMeterStarter_m->getAvgCurrent();
-    if (starterBattCurrent < -1.0)     // TODO Use a configurable value
+    float alternatorCurrent = ampMeterAlternator_m->getAvgCurrent();
+    if (alternatorCurrent > 0.5)     // TODO Use a configurable value
     {
         //if (!alternatorOn_m || fsm_m->getCurrentState() != stateAlternatorOn_m)
         if (!alternatorOn_m)
@@ -119,13 +123,8 @@ void ChargerControl::tick( )
             delay(10);
         }
     }
-    else if (starterBattCurrent > 10.0)   // TODO Use a configurable value
+    else
     {
-        // When the DC-DC charger kicks in, the starter battery will most likely discharge for a short period of time.
-        // I need to think of an algorithm to detect reliably that the alternator stopped. The most reliable way
-        // would be to measure the shunt on the alternator output. I might do that. According to spec from BlueSea it's a 50 Amp 50 mV.
-        // I just need to put a INA219 on it.
-        // For now I'll declare the alternator off by a big discharge rate.
         if (alternatorOn_m)
         {
             fsm_m->trigger(alternatorTurnedOff_c);
@@ -137,17 +136,19 @@ void ChargerControl::tick( )
 
     // Detection of battery selector to both (all, 1+2).
     // TODO Refine the charge voltage slope detection.
-    if ((ampMeterStarter_m->getAvgBusVolt() - ampMeterHouse_m->getAvgBusVolt() < 0.2) &&    // TODO Replace 0.2 by configurable value
-         (ampMeterHouse_m->getAvgBusVolt() - voltageStartOfCharge_m < 0.3))    // Charge voltage slope detection
+    if (fabs(ampMeterStarter_m->getAvgBusVolt() - ampMeterHouse_m->getAvgBusVolt()) < persistent_m->getAllDeadZone())
+//         (ampMeterHouse_m->getAvgBusVolt() - voltageStartOfCharge_m < 0.3))    // Charge voltage slope detection
     {
         // Selector on Both
         fsm_m->trigger(batterieSelectorAllDetected_c);
+        if (!selectorBothOn_m) Serial.println("Selector on Both");
         selectorBothOn_m = true;
     }
     else
     {
         // Selector not on Both
         //fsm_m->trigger(batterieSelectorNotOnAllDetected_c);
+        if (selectorBothOn_m) Serial.println("Selector not on Both");
         selectorBothOn_m = false;
     }
 }
@@ -156,7 +157,7 @@ void ChargerControl::startHoldoffTimer( )
 {
     if (cc_g->holdOffTimerId_m == -1)
     {
-        cc_g->holdOffTimerId_m = cc_g->sTimerEngine_m.setTimeout(5000, holdoffTimerExpired);
+        cc_g->holdOffTimerId_m = cc_g->sTimerEngine_m.setTimeout(cc_g->persistent_m->getDelay()*1000, holdoffTimerExpired);
         Serial.println("Start holdoff timer");
     }
     else

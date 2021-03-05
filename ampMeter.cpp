@@ -16,7 +16,7 @@ AmpMeter::~AmpMeter()
 {
 }
 
-bool AmpMeter::init(float shuntAmp, float shuntVolt)
+bool AmpMeter::init(float shuntAmp, float rshunt)
 {
     if (! ina219_mp->begin()) 
     {
@@ -24,8 +24,7 @@ bool AmpMeter::init(float shuntAmp, float shuntVolt)
     }
     else
     {
-        //ina219_mp->setCalibration_16V_50A_75mv();
-        ina219_mp->setCalibration_16V( shuntAmp, shuntVolt);
+        ina219_mp->setCalibration_16V_rShunt_maxAmp( rshunt, shuntAmp);
         demo = false;
     }
     start();
@@ -104,7 +103,7 @@ unsigned long AmpMeter::tick()
         if (address_m == 0x45)   // Solar charger
         {
             demoVolt = 12.05;
-            demoCurrent = 1350.0;    // mA
+            demoCurrent = 0.0;    // mA
         }
         cumulBusVolt_m    += demoVolt;
         cumulCurrent_m    += demoCurrent;

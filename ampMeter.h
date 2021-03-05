@@ -23,7 +23,7 @@ public:
     ~AmpMeter();
 
     // Return true if success, false failure
-    bool init(float shuntAmp, float shuntVolt);
+    bool init(float shuntAmp, float rshunt);
 
     // Start the timer for before the first tick.
     void start();

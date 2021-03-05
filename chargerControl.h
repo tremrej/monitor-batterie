@@ -9,6 +9,7 @@
 #include "Fsm.h"          // Source: ~/sketchbook/librarie/arduino-fsm
 #include "SimpleTimer.h"  // Source: ~/sketchbook/librarie/SimpleTimer
 #include "ampMeter.h"
+#include "persistent.h"
 
 // ==================================================================================
 //  @class ChargerControl
@@ -40,6 +41,8 @@ public:
 
     ChargerControl( AmpMeter &ampMeterStarter
                   , AmpMeter &ampMeterHouse
+                  , AmpMeter &ampMeterAlternator
+                  , Persistent &persistent
                   , int pinIgnition
                   , int pinRelayDcDcEnable
                   , int pinRelayDcDcSlow);
@@ -59,6 +62,8 @@ private:
 
     AmpMeter *ampMeterStarter_m;
     AmpMeter *ampMeterHouse_m;
+    AmpMeter *ampMeterAlternator_m;
+    Persistent *persistent_m;
     int       pinIgnition_m;
     int       pinRelayDcDcEnable_m;
     int       pinRelayDcDcSlow_m;
