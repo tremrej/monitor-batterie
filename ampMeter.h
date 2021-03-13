@@ -19,7 +19,8 @@ class AmpMeter
 {
 public:
 
-    AmpMeter(int address = 0x40);
+    AmpMeter( int address = 0x40
+            , float ampOffset = 0.0);    // amp offset (amp)
     ~AmpMeter();
 
     // Return true if success, false failure
@@ -38,10 +39,10 @@ public:
 
     void resetAmpHour();
 
-    float getBusVolt();
-    float getAvgBusVolt();
-    float getAvgCurrent();
-    float getAvgPower();
+    float getBusVolt();        // Volt
+    float getAvgBusVolt();     // Volt
+    float getAvgCurrent();     // Amp
+    float getAvgPower();       // Watt
     float getAmpSecondLastAvg();
 
     float getAmpHour();
@@ -51,6 +52,7 @@ public:
 private:
 
     int address_m;
+    float ampOffset_m;     // Units: milli amp
     bool demo;
 
     Adafruit_INA219 *ina219_mp;  // Driver of the amp meter

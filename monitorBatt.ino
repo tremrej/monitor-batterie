@@ -55,8 +55,8 @@
 // Pins for input/output
 #ifdef ARDUINO_AVR_MEGA2560
 #define pinIgnition A3
-#define pinDcDcEnabled 2       // relay 1
-#define pinDcDcSlow    5       // relay 2
+#define pinDcDcEnabled 5       // relay 1
+#define pinDcDcSlow    2       // relay 2
 #define blinkingLed 13
 #elif NRF52
 #define pinIgnition A3
@@ -76,18 +76,15 @@
 #define averagePeriod   1000000
 //#define averagePeriod 600000
 
-AmpMeter ampMeterStarter_g     (0x40);
-AmpMeter ampMeterHouse_g       (0x41);   // Bridge A0
-AmpMeter ampMeterAlternator_g  (0x44);   // Bridge A1
-AmpMeter ampMeterSolar_g       (0x45);   // Bridge A0 & A1
+// Somehow the INA219 doesn't indicate zero when there is no current. I apply a offset if need be.
+//                             address offsetCurrent
+//                             ------- -------------
+AmpMeter ampMeterStarter_g     (0x40, +015.0);
+AmpMeter ampMeterHouse_g       (0x41, -050.0);   // Bridge A0
+AmpMeter ampMeterAlternator_g  (0x44, -095.0);   // Bridge A1
+AmpMeter ampMeterSolar_g       (0x45,    0.0);   // Bridge A0 & A1
 
 Persistent persistent_g = Persistent();
-
-ChargerControl chargerControl_g( ampMeterStarter_g
-                               , ampMeterHouse_g
-                               , ampMeterAlternator_g
-                               , persistent_g
-                               , pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
 
 //ChargeControler chargeControler_gg(ampMeterStarter_g, ampMeterHouse_g, pinIgnition, pinDcDcEnabled, pinDcDcSlow);
@@ -120,6 +117,13 @@ EcranConfig ecranConfig_g = EcranConfig( tft
                                        , dcDcInVoltThresPicker_g
                                        , chargeStartDelay_g
                                        , allDeadZone_g);
+
+ChargerControl chargerControl_g( ampMeterStarter_g
+                               , ampMeterHouse_g
+                               , ampMeterAlternator_g
+                               , persistent_g
+                               , chargeMode_g
+                               , pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
 
 #ifdef NRF52
@@ -206,7 +210,7 @@ void setup() {
   {
       ampMeterHouse_g.start();
   }
-  if (! ampMeterAlternator_g.init(50.0, 0.001479*3.3/4.0))
+  if (! ampMeterAlternator_g.init(50.0, 0.0015))  // The factor 3.3/4.0 is manual adjustment done using another ampMeter as reference.
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -358,14 +362,15 @@ unsigned long testRoundRects() {
 
 void loop(void) {
 
-    // Tick the charge controller.
-    chargerControl_g.tick();
 
     if (takeMeasurement_g)
     {
         // It's time to take a measurement according to the timer interrupt.
         takeMeasurement_g = false;    // Wait for next timer interrupt
         takeMeasurementAndDisplay(activeWindow_g == windowEcran1_c);
+
+        // Tick the charge controller.
+        chargerControl_g.tick();
     }
 
     if (nextWindow_g != activeWindow_g)

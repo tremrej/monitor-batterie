@@ -6,9 +6,11 @@
 
 #include "ampMeter.h"
 
-AmpMeter::AmpMeter(int address)
+AmpMeter::AmpMeter( int address
+                  , float ampOffset)
+    : address_m (address)
+    , ampOffset_m (ampOffset)
 {
-    address_m = address;
     ina219_mp = new Adafruit_INA219(address);
 }
 
@@ -124,7 +126,9 @@ unsigned long AmpMeter::average()
     startAvg_m = tempTimestamp;
 
     avgBusVolt_m = cumulBusVolt_m / avgCnt_m;
-    avgCurrent_m = cumulCurrent_m / avgCnt_m;    // mA
+    avgCurrent_m = (cumulCurrent_m / avgCnt_m) + ampOffset_m;    // mA
+    // Clamp current to zero if within deadzone
+    if (fabs(avgCurrent_m) < 10) avgCurrent_m = 0.0;      // current deadzone of 10 ma
     avgPower_m   = cumulPower_m   / avgCnt_m;    // mW
     ampSecondLastAvg_m = avgCurrent_m / 1000.0 * avgDuration_m;   // AmpMicroSecond
     ampSecondSinceReset_m += ampSecondLastAvg_m;
@@ -150,7 +154,7 @@ float AmpMeter::getAvgBusVolt()
 
 float AmpMeter::getAvgCurrent()
 {
-    return avgCurrent_m / 1000.0;   // Amp
+    return (avgCurrent_m / 1000.0);   // Amp
 }
 
 float AmpMeter::getAvgPower()

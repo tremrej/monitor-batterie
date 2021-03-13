@@ -5,6 +5,7 @@
 // ==================================================================================
 
 #include "chargerControl.h"
+#include "monitorBatt.h"       // chargeModeAuto_c
 
 // Definition of class member
 
@@ -17,6 +18,7 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
                               , AmpMeter &ampMeterHouse
                               , AmpMeter &ampMeterAlternator
                               , Persistent &persistent
+                              , RadioButton &chargeMode
                               , int pinIgnition
                               , int pinRelayDcDcEnable
                               , int pinRelayDcDcSlow)
@@ -24,6 +26,7 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , ampMeterHouse_m  (&ampMeterHouse)
     , ampMeterAlternator_m  (&ampMeterAlternator)
     , persistent_m (&persistent)
+    , chargeMode_m (&chargeMode)
     , pinIgnition_m    (pinIgnition)
     , pinRelayDcDcEnable_m (pinRelayDcDcEnable)
     , pinRelayDcDcSlow_m   (pinRelayDcDcSlow)
@@ -31,7 +34,11 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , ignitionOn_m (false)
     , alternatorOn_m (false)
     , selectorBothOn_m (false)
-    , voltageStartOfCharge_m (0.0)
+    , selectorOnBothBeginTimestamp_m(0)
+    , houseVoltageBeforeCharge_m (0.0)
+    , chargeStartTime_m (0)
+    , slowCharge_m(false)
+    , slowChargeTimestamp_m(0)
 
 {
     // Definition of states
@@ -78,11 +85,20 @@ void ChargerControl::tick( )
     // Kick the timer engine
     sTimerEngine_m.run();
 
+    if (chargeMode_m->getValue() == chargeModeDisabled_c)
+    {
+        if ( fsm_m->getCurrentState() == stateChargerEnabled_m)
+        {
+            fsm_m->trigger(ignitionTurnedOff_c);
+            //stopCharger();
+        }
+        // Nothing else todo
+        return;
+    }
+
     // Check ignition key
     if (digitalRead(pinIgnition_m) == HIGH && !selectorBothOn_m)
     {
-        if (!ignitionOn_m)
-        {
             if (!alternatorOn_m)
             {
                 fsm_m->trigger(ignitionTurnedOn_c);
@@ -92,6 +108,8 @@ void ChargerControl::tick( )
                 // The alternator is already on for some reason
                 fsm_m->trigger(ignitionTurnedOnAlterOn_c);
             }
+        if (!ignitionOn_m)
+        {
             Serial.println("Ignition turned on");
             ignitionOn_m = true;
             // Debounce
@@ -116,6 +134,8 @@ void ChargerControl::tick( )
         //if (!alternatorOn_m || fsm_m->getCurrentState() != stateAlternatorOn_m)
         if (!alternatorOn_m)
         {
+            // Alternator just started
+            houseVoltageBeforeCharge_m = ampMeterHouse_m->getAvgBusVolt();
             fsm_m->trigger(alternatorTurnedOn_c);
             Serial.println("Alternator turned on");
             alternatorOn_m = true;
@@ -125,8 +145,10 @@ void ChargerControl::tick( )
     }
     else
     {
+        // Alternator is stopped
         if (alternatorOn_m)
         {
+            // Alternator just stopped
             fsm_m->trigger(alternatorTurnedOff_c);
             Serial.println("Alternator turned off");
             alternatorOn_m = false;
@@ -135,11 +157,24 @@ void ChargerControl::tick( )
     }
 
     // Detection of battery selector to both (all, 1+2).
-    // TODO Refine the charge voltage slope detection.
-    if (fabs(ampMeterStarter_m->getAvgBusVolt() - ampMeterHouse_m->getAvgBusVolt()) < persistent_m->getAllDeadZone())
-//         (ampMeterHouse_m->getAvgBusVolt() - voltageStartOfCharge_m < 0.3))    // Charge voltage slope detection
+    if (fabs(ampMeterStarter_m->getAvgBusVolt() - ampMeterHouse_m->getAvgBusVolt()) < persistent_m->getAllDeadZone()) 
     {
-        // Selector on Both
+        if (selectorOnBothBeginTimestamp_m == 0)
+        {
+            selectorOnBothBeginTimestamp_m = millis();
+        }
+    }
+    else
+    {
+        selectorOnBothBeginTimestamp_m = 0;
+    }
+
+    if ( (fsm_m->getCurrentState() != stateChargerEnabled_m &&
+          selectorOnBothBeginTimestamp_m != 0) ||
+         (fsm_m->getCurrentState() == stateChargerEnabled_m &&
+          (selectorOnBothBeginTimestamp_m != 0 && (millis() - selectorOnBothBeginTimestamp_m > (10 * 1000)))))    // Grace period of 10 seconds while charger is on
+    {
+        // Batterie Selector on Both
         fsm_m->trigger(batterieSelectorAllDetected_c);
         if (!selectorBothOn_m) Serial.println("Selector on Both");
         selectorBothOn_m = true;
@@ -151,6 +186,43 @@ void ChargerControl::tick( )
         if (selectorBothOn_m) Serial.println("Selector not on Both");
         selectorBothOn_m = false;
     }
+
+    // Set charge speed
+    if ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
+         ampMeterStarter_m->getAvgBusVolt() < 12.1)       // TODO make it configurable
+    {
+        // Too hard on the source batterie. We go slow charge.
+        if (!slowCharge_m)
+        {
+            setSlowCharge(true);
+            slowChargeTimestamp_m = millis();
+        }
+        else
+        {
+            // Already slow charge.
+            // Nothing to do
+        }
+    }
+    else
+    {
+        // Check if we can go back to fast charge
+        if (slowCharge_m)
+        {
+            if (ampMeterStarter_m->getAvgBusVolt() > 12.35)       // TODO make it configurable
+            {
+                // The voltage of the source batterie is good now.
+                //unsigned long ttt = 5L*60L*1000L;       // 5 minutes
+                if (millis() - slowChargeTimestamp_m > 5L*60L*1000L)
+                {
+                    // And we have been on slow charge for at least x minutes.
+                    // Back to fast charge
+                    setSlowCharge(false);
+                    slowChargeTimestamp_m = 0;
+                }
+            }
+        }
+    }
+
 }
 
 void ChargerControl::startHoldoffTimer( )
@@ -191,7 +263,16 @@ void ChargerControl::startCharger( )
 {
     // Start charger
     // save voltage of charging batterie, i.e. house in order to calculate slope of charge
-    cc_g->voltageStartOfCharge_m = cc_g->ampMeterHouse_m->getAvgBusVolt();
+//    cc_g->houseVoltageBeforeCharge_m = cc_g->ampMeterHouse_m->getAvgBusVolt();
+    cc_g->setSlowCharge(false);
     digitalWrite(cc_g->pinRelayDcDcEnable_m, HIGH);
     Serial.println("Start charger");
+}
+
+void ChargerControl::setSlowCharge(bool slowCharge)
+{
+    slowCharge_m = slowCharge;
+    digitalWrite(cc_g->pinRelayDcDcSlow_m, slowCharge? HIGH:LOW);
+    Serial.print("Charge speed ");
+    Serial.println(slowCharge? (char *) "slow":(char *) "fast");
 }

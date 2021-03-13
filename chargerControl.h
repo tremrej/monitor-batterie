@@ -10,6 +10,7 @@
 #include "SimpleTimer.h"  // Source: ~/sketchbook/librarie/SimpleTimer
 #include "ampMeter.h"
 #include "persistent.h"
+#include "radioButton.h"
 
 // ==================================================================================
 //  @class ChargerControl
@@ -43,6 +44,7 @@ public:
                   , AmpMeter &ampMeterHouse
                   , AmpMeter &ampMeterAlternator
                   , Persistent &persistent
+                  , RadioButton &chargeMode
                   , int pinIgnition
                   , int pinRelayDcDcEnable
                   , int pinRelayDcDcSlow);
@@ -52,6 +54,7 @@ public:
     bool init();
 
     void tick();
+    void setSlowCharge(bool slowCharge);
 
 private:
 
@@ -64,6 +67,7 @@ private:
     AmpMeter *ampMeterHouse_m;
     AmpMeter *ampMeterAlternator_m;
     Persistent *persistent_m;
+    RadioButton *chargeMode_m;
     int       pinIgnition_m;
     int       pinRelayDcDcEnable_m;
     int       pinRelayDcDcSlow_m;
@@ -83,8 +87,13 @@ private:
     bool ignitionOn_m;
     bool alternatorOn_m;
     bool selectorBothOn_m;
+    long selectorOnBothBeginTimestamp_m;    // millisec
 
-    float voltageStartOfCharge_m;
+    float houseVoltageBeforeCharge_m;
+    long  chargeStartTime_m;    // milli second timestamp
+
+    bool slowCharge_m;
+    long slowChargeTimestamp_m;
 
 };
 
