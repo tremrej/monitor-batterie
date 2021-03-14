@@ -127,9 +127,13 @@ unsigned long AmpMeter::average()
 
     avgBusVolt_m = cumulBusVolt_m / avgCnt_m;
     avgCurrent_m = (cumulCurrent_m / avgCnt_m) + ampOffset_m;    // mA
-    // Clamp current to zero if within deadzone
-    if (fabs(avgCurrent_m) < 10) avgCurrent_m = 0.0;      // current deadzone of 10 ma
     avgPower_m   = cumulPower_m   / avgCnt_m;    // mW
+    // Clamp current to zero if within deadzone
+    if (fabs(avgCurrent_m) < 10)
+    {
+        avgCurrent_m = 0.0;      // current deadzone of 10 ma
+        avgPower_m   = 0.0;
+    }
     ampSecondLastAvg_m = avgCurrent_m / 1000.0 * avgDuration_m;   // AmpMicroSecond
     ampSecondSinceReset_m += ampSecondLastAvg_m;
 

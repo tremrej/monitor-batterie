@@ -10,14 +10,14 @@
 
 Persistent::Persistent()
     : version_m(0)
-    , inputVoltThreshold_m(12.0)
+    , inputVoltThreshold_m(12.1)
     , delay_m(10.0)
     , allDeadZone_m(0.3)
     , efficiencyOfCharge_m(90)
     , capacityStarter_m(60)
     , capacityHouse_m(75)
-    , fullChargeVoltStarter_m(14.0)
-    , fullChargeVoltHouse_m(14.0)
+    , fullChargeVoltStarter_m(14.4)
+    , fullChargeVoltHouse_m(14.4)
 {
 }
 

@@ -39,6 +39,7 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , chargeStartTime_m (0)
     , slowCharge_m(false)
     , slowChargeTimestamp_m(0)
+    , fullChargeTimestamp_m(0)
 
 {
     // Definition of states
@@ -169,9 +170,14 @@ void ChargerControl::tick( )
         selectorOnBothBeginTimestamp_m = 0;
     }
 
+    // Logic to detect batterie selector on position "both":
+    // - Not charging and both bank "same" voltage
+    // - Charging and "not fully charged" and "same" voltage for 10 seconds.
+    // Note: we do not declare "both" if fully charged. That could be enhanced... I'll get back to it.
     if ( (fsm_m->getCurrentState() != stateChargerEnabled_m &&
           selectorOnBothBeginTimestamp_m != 0) ||
          (fsm_m->getCurrentState() == stateChargerEnabled_m &&
+          fullChargeTimestamp_m == 0 &&
           (selectorOnBothBeginTimestamp_m != 0 && (millis() - selectorOnBothBeginTimestamp_m > (10 * 1000)))))    // Grace period of 10 seconds while charger is on
     {
         // Batterie Selector on Both
@@ -189,7 +195,7 @@ void ChargerControl::tick( )
 
     // Set charge speed
     if ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
-         ampMeterStarter_m->getAvgBusVolt() < 12.1)       // TODO make it configurable
+         ampMeterStarter_m->getAvgBusVolt() < persistent_m->getInputVoltThreshold())
     {
         // Too hard on the source batterie. We go slow charge.
         if (!slowCharge_m)
@@ -208,7 +214,7 @@ void ChargerControl::tick( )
         // Check if we can go back to fast charge
         if (slowCharge_m)
         {
-            if (ampMeterStarter_m->getAvgBusVolt() > 12.35)       // TODO make it configurable
+            if (ampMeterStarter_m->getAvgBusVolt() > (persistent_m->getInputVoltThreshold()+2.2))       // TODO make the hysteresis configurable
             {
                 // The voltage of the source batterie is good now.
                 //unsigned long ttt = 5L*60L*1000L;       // 5 minutes
@@ -223,6 +229,20 @@ void ChargerControl::tick( )
         }
     }
 
+    // Detection of full charge
+    if ( ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
+           ampMeterHouse_m->getAvgBusVolt() > persistent_m->getFullChargeVoltHouse()) ||
+         ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
+           ampMeterHouse_m->getAvgBusVolt() > 13.4 &&
+           ampMeterHouse_m->getAvgCurrent() > -5.0 ))     // Charging rate less than 5 amps.
+    {
+        if (fullChargeTimestamp_m == 0)
+        {
+            Serial.println("Fully charged");
+        }
+
+        fullChargeTimestamp_m = millis();
+    }
 }
 
 void ChargerControl::startHoldoffTimer( )
@@ -265,6 +285,7 @@ void ChargerControl::startCharger( )
     // save voltage of charging batterie, i.e. house in order to calculate slope of charge
 //    cc_g->houseVoltageBeforeCharge_m = cc_g->ampMeterHouse_m->getAvgBusVolt();
     cc_g->setSlowCharge(false);
+    cc_g->fullChargeTimestamp_m = 0;
     digitalWrite(cc_g->pinRelayDcDcEnable_m, HIGH);
     Serial.println("Start charger");
 }
