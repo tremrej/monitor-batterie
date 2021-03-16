@@ -10,6 +10,8 @@ enum ActiveWindow_e {
     windowEcran1_c,
     windowConfig_c,
     windowPickDcDcInVoltThres_c,
+    windowPickDcDcInVoltThresToGoSlow_c,
+    windowPickDcDcInVoltHysteresis_c,
     windowPickDcDcDelay_c,
     windowPickAllSelectDeadzone_c,
     windowChargeMode_c,

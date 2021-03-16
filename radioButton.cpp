@@ -110,11 +110,11 @@ bool RadioButton::drawStatic()
         tft_m->print(listOfChoice_m[idx]);
         if (idx == currentIdx_m)
         {
-            listOfButton_ma[idx]->changeLabel(" x");
+            listOfButton_ma[idx]->changeLabel((char *) " x");
         }
         else
         {
-            listOfButton_ma[idx]->changeLabel("");
+            listOfButton_ma[idx]->changeLabel((char *) "");
         }
         listOfButton_ma[idx]->drawButton(idx != currentIdx_m);
     }

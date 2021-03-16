@@ -10,14 +10,16 @@
 
 Persistent::Persistent()
     : version_m(0)
-    , inputVoltThreshold_m(12.1)
+    , inputVoltThreshold_m(11.25)
+    , inputVoltThresholdToGoSlow_m(12.1)
+    , slowHysteresis_m(2.2)
     , delay_m(10.0)
     , allDeadZone_m(0.3)
     , efficiencyOfCharge_m(90)
-    , capacityStarter_m(60)
+    , capacityStarter_m(90)
     , capacityHouse_m(75)
-    , fullChargeVoltStarter_m(14.4)
-    , fullChargeVoltHouse_m(14.4)
+    , fullChargeVoltStarter_m(14.3)
+    , fullChargeVoltHouse_m(14.3)
 {
 }
 
@@ -35,6 +37,8 @@ void Persistent::init( )
     {
         Serial.print("Persistent memory version: "); Serial.println(version_m);
         inputVoltThreshold_m.restore();
+        inputVoltThresholdToGoSlow_m.restore();
+        slowHysteresis_m.restore();
         delay_m.restore();
         allDeadZone_m.restore();
         efficiencyOfCharge_m.restore();
@@ -57,19 +61,23 @@ void Persistent::factoryReset( )
 
     inputVoltThreshold_m = 11.25;
     inputVoltThreshold_m.save();
+    inputVoltThresholdToGoSlow_m = 12.1;
+    inputVoltThresholdToGoSlow_m.save();
+    slowHysteresis_m = 2.2;
+    slowHysteresis_m.save();
     delay_m = 10;
     delay_m.save();
     allDeadZone_m = 0.3;
     allDeadZone_m.save();
     efficiencyOfCharge_m = 90;   // %
     efficiencyOfCharge_m.save();
-    capacityStarter_m = 60;   // AH
+    capacityStarter_m = 90;   // AH
     capacityStarter_m.save();
     capacityHouse_m = 75;   // AH
     capacityHouse_m.save();
-    fullChargeVoltStarter_m = 14.0;
+    fullChargeVoltStarter_m = 14.3;
     fullChargeVoltStarter_m.save();
-    fullChargeVoltHouse_m = 14.0;
+    fullChargeVoltHouse_m = 14.3;
     fullChargeVoltHouse_m.save();
 }
 

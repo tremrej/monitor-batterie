@@ -9,7 +9,7 @@
 #include "EEPROMex.h"
 #include "EEPROMVar.h"
 
-#define CURRENTVERSION 4      // 
+#define CURRENTVERSION 5    // With hysteresis
 
 // ==================================================================================
 //  @class Persistent
@@ -30,6 +30,12 @@ public:
 
     void  setInputVoltThreshold(float value) { inputVoltThreshold_m = value; inputVoltThreshold_m.save(); };
     float getInputVoltThreshold()           { return inputVoltThreshold_m; };
+
+    void  setInputVoltThresholdToGoSlow(float value) { inputVoltThresholdToGoSlow_m = value; inputVoltThresholdToGoSlow_m.save(); };
+    float getInputVoltThresholdToGoSlow()           { return inputVoltThresholdToGoSlow_m; };
+
+    void  setVoltHysteresis(float value) { slowHysteresis_m = value; slowHysteresis_m.save(); };
+    float getVoltHysteresis()           { return slowHysteresis_m; };
 
     void  setDelay(float value) { delay_m = value; delay_m.save(); };
     float getDelay()            { return delay_m; };
@@ -54,7 +60,9 @@ public:
 private:
 
     EEPROMVar<byte>  version_m;
-    EEPROMVar<float> inputVoltThreshold_m;
+    EEPROMVar<float> inputVoltThreshold_m;    // Threshold to stop the charge
+    EEPROMVar<float> inputVoltThresholdToGoSlow_m;    // Threshold to go slow charge
+    EEPROMVar<float> slowHysteresis_m            ;    // Hysteresis to go back fast charge.
     EEPROMVar<float> delay_m;
     EEPROMVar<float> allDeadZone_m;
     EEPROMVar<float> efficiencyOfCharge_m;

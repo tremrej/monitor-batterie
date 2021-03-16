@@ -80,7 +80,7 @@
 //                             address offsetCurrent
 //                             ------- -------------
 AmpMeter ampMeterStarter_g     (0x40, +015.0);
-AmpMeter ampMeterHouse_g       (0x41, -050.0);   // Bridge A0
+AmpMeter ampMeterHouse_g       (0x41, -049.0);   // Bridge A0
 AmpMeter ampMeterAlternator_g  (0x44, -095.0);   // Bridge A1
 AmpMeter ampMeterSolar_g       (0x45,    0.0);   // Bridge A0 & A1
 
@@ -98,6 +98,8 @@ char *charModeChoice[] = { (char *) "auto"
                          , (char *) "on"};
 
 FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "Input volt threshold", 11.0, 13.0, 0.01);
+FloatPicker dcDcInVoltThresToGoSlowPicker_g = FloatPicker (tft, (char *) "Slow input volt", 11.0, 13.0, 0.01);
+FloatPicker dcDcInVoltHysteresisPicker_g = FloatPicker (tft, (char *) "Volt hysteresis", 0.1, 3.0, 0.01);
 FloatPicker chargeStartDelay_g      = FloatPicker (tft, (char *) "Delai de demarrage", 5.0, 180.0, 1.0);
 FloatPicker allDeadZone_g           = FloatPicker (tft, (char *) "ALl selector deadzone", 0.05, 2.0, 0.01);
 RadioButton chargeMode_g            = RadioButton (tft, (char *) "Charge mode", charModeChoice, chargeModeMax_c);
@@ -115,6 +117,8 @@ EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
 EcranConfig ecranConfig_g = EcranConfig( tft
                                        , persistent_g
                                        , dcDcInVoltThresPicker_g
+                                       , dcDcInVoltThresToGoSlowPicker_g
+                                       , dcDcInVoltHysteresisPicker_g
                                        , chargeStartDelay_g
                                        , allDeadZone_g);
 
@@ -151,6 +155,8 @@ void setup() {
 
   persistent_g.init();
   dcDcInVoltThresPicker_g.init(persistent_g.getInputVoltThreshold());
+  dcDcInVoltThresToGoSlowPicker_g.init(persistent_g.getInputVoltThresholdToGoSlow());
+  dcDcInVoltHysteresisPicker_g.init(persistent_g.getVoltHysteresis());
   chargeStartDelay_g.init(persistent_g.getDelay());
   allDeadZone_g.init(persistent_g.getAllDeadZone());
   chargeMode_g.init(0);

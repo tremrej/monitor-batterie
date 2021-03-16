@@ -195,7 +195,7 @@ void ChargerControl::tick( )
 
     // Set charge speed
     if ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
-         ampMeterStarter_m->getAvgBusVolt() < persistent_m->getInputVoltThreshold())
+         ampMeterStarter_m->getAvgBusVolt() < persistent_m->getInputVoltThresholdToGoSlow())
     {
         // Too hard on the source batterie. We go slow charge.
         if (!slowCharge_m)
@@ -214,7 +214,8 @@ void ChargerControl::tick( )
         // Check if we can go back to fast charge
         if (slowCharge_m)
         {
-            if (ampMeterStarter_m->getAvgBusVolt() > (persistent_m->getInputVoltThreshold()+2.2))       // TODO make the hysteresis configurable
+            if (ampMeterStarter_m->getAvgBusVolt() > (persistent_m->getInputVoltThresholdToGoSlow() + 
+                                                      persistent_m->getVoltHysteresis()))
             {
                 // The voltage of the source batterie is good now.
                 //unsigned long ttt = 5L*60L*1000L;       // 5 minutes

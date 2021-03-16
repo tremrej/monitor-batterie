@@ -16,15 +16,27 @@ void printFloatAt(float value, int width, int x, int y);
 #define inVoltButtonW 80
 #define inVoltButtonH 20
 
+// inVoltToGoSlow button
+#define inVoltSlowButtonX 320-115
+#define inVoltSlowButtonY 45+25
+#define inVoltSlowButtonW 80
+#define inVoltSlowButtonH 20
+
+// inVoltHysteresis button
+#define inVoltHystButtonX 320-115
+#define inVoltHystButtonY 45+25+25
+#define inVoltHystButtonW 80
+#define inVoltHystButtonH 20
+
 // delay button
 #define delayButtonX 320-115
-#define delayButtonY 45+25
+#define delayButtonY 45+25+25+25
 #define delayButtonW 80
 #define delayButtonH 20
 
 // allDeadZone button
 #define allDeadZoneButtonX 320-115
-#define allDeadZoneButtonY 45+25+25
+#define allDeadZoneButtonY 45+25+25+25+25
 #define allDeadZoneButtonW 80
 #define allDeadZoneButtonH 20
 
@@ -36,15 +48,21 @@ void printFloatAt(float value, int width, int x, int y);
 
 EcranConfig::EcranConfig( Adafruit_GFX &tft
                         , Persistent   &persistent
-                        , FloatPicker  &inVoltThreshold
+                        , FloatPicker  &inVoltThresholdStop
+                        , FloatPicker  &inVoltThresholdToGoSlow
+                        , FloatPicker  &inVoltHysteresis
                         , FloatPicker  &chargeStartDelay
                         , FloatPicker  &allDeadZone)
     : tft_m(&tft)
     , persistent_m (&persistent)
-    , inVoltThreshold_m (&inVoltThreshold)
+    , inVoltThresholdStop_m (&inVoltThresholdStop)
+    , inVoltThresholdToGoSlow_m (&inVoltThresholdToGoSlow)
+    , inVoltHysteresis_m (&inVoltHysteresis)
     , chargeStartDelay_m (&chargeStartDelay)
     , allDeadZone_m (&allDeadZone)
     , inVoltButton_m()
+    , inVoltToGoSlowButton_m()
+    , inVoltHystButton_m()
     , delayButton_m()
     , allDeadZoneButton_m()
     , backButton_m()
@@ -61,6 +79,18 @@ EcranConfig::~EcranConfig()
 void EcranConfig::init()
 {
     inVoltButton_m.initButtonUL( tft_m, inVoltButtonX, inVoltButtonY, inVoltButtonW, inVoltButtonH
+                        , ILI9341_DARKGREY  // outline
+                        , ILI9341_YELLOW  // fill
+                        , ILI9341_BLUE   // text
+                        , (char *)"x", 1, 2);
+
+    inVoltToGoSlowButton_m.initButtonUL( tft_m, inVoltSlowButtonX, inVoltSlowButtonY, inVoltSlowButtonW, inVoltSlowButtonH
+                        , ILI9341_DARKGREY  // outline
+                        , ILI9341_YELLOW  // fill
+                        , ILI9341_BLUE   // text
+                        , (char *)"x", 1, 2);
+
+    inVoltHystButton_m.initButtonUL( tft_m, inVoltHystButtonX, inVoltHystButtonY, inVoltHystButtonW, inVoltHystButtonH
                         , ILI9341_DARKGREY  // outline
                         , ILI9341_YELLOW  // fill
                         , ILI9341_BLUE   // text
@@ -85,7 +115,6 @@ void EcranConfig::init()
                         , ILI9341_ORANGE  // fill
                         , ILI9341_BLUE   // text
                         , (char *)"back  ", 1, 2);
-    //inVoltButton_m.press(false);
 }
 
 void EcranConfig::processChangeOfWindow(ActiveWindow_e window)
@@ -100,7 +129,17 @@ void EcranConfig::processChangeOfWindow(ActiveWindow_e window)
         }
         case windowPickDcDcInVoltThres_c:
         {
-            inVoltThreshold_m->drawStatic();
+            inVoltThresholdStop_m->drawStatic();
+            break;
+        }
+        case windowPickDcDcInVoltThresToGoSlow_c:
+        {
+            inVoltThresholdToGoSlow_m->drawStatic();
+            break;
+        }
+        case windowPickDcDcInVoltHysteresis_c:
+        {
+            inVoltHysteresis_m->drawStatic();
             break;
         }
         case windowPickDcDcDelay_c:
@@ -139,6 +178,16 @@ ActiveWindow_e EcranConfig::checkUI()
                 nextWindow_m = windowPickDcDcInVoltThres_c;
                 delay(100);
             }
+            if (inVoltToGoSlowButton_m.contains(x,y))
+            {
+                nextWindow_m = windowPickDcDcInVoltThresToGoSlow_c;
+                delay(100);
+            }
+            if (inVoltHystButton_m.contains(x,y))
+            {
+                nextWindow_m = windowPickDcDcInVoltHysteresis_c;
+                delay(100);
+            }
             if (delayButton_m.contains(x,y))
             {
                 nextWindow_m = windowPickDcDcDelay_c;
@@ -158,7 +207,7 @@ ActiveWindow_e EcranConfig::checkUI()
     }
     else if (activeWindow_m == windowPickDcDcInVoltThres_c)
     {
-        Action_e action = inVoltThreshold_m->checkUI();
+        Action_e action = inVoltThresholdStop_m->checkUI();
         if (action == save_c ||
             action == cancel_c)
         {
@@ -168,11 +217,49 @@ ActiveWindow_e EcranConfig::checkUI()
         if (action == save_c)
         {
             // Save the new value.
-            persistent_m->setInputVoltThreshold(inVoltThreshold_m->getValue());
+            persistent_m->setInputVoltThreshold(inVoltThresholdStop_m->getValue());
         }
         else if (action == cancel_c)
         {
-            inVoltThreshold_m->setValue(persistent_m->getInputVoltThreshold());
+            inVoltThresholdStop_m->setValue(persistent_m->getInputVoltThreshold());
+        }
+    }
+    else if (activeWindow_m == windowPickDcDcInVoltThresToGoSlow_c)
+    {
+        Action_e action = inVoltThresholdToGoSlow_m->checkUI();
+        if (action == save_c ||
+            action == cancel_c)
+        {
+            // Value picked. Let's go back to the main window.
+            nextWindow_m = windowConfig_c;
+        }
+        if (action == save_c)
+        {
+            // Save the new value.
+            persistent_m->setInputVoltThresholdToGoSlow(inVoltThresholdToGoSlow_m->getValue());
+        }
+        else if (action == cancel_c)
+        {
+            inVoltThresholdToGoSlow_m->setValue(persistent_m->getInputVoltThresholdToGoSlow());
+        }
+    }
+    else if (activeWindow_m == windowPickDcDcInVoltHysteresis_c)
+    {
+        Action_e action = inVoltHysteresis_m->checkUI();
+        if (action == save_c ||
+            action == cancel_c)
+        {
+            // Value picked. Let's go back to the main window.
+            nextWindow_m = windowConfig_c;
+        }
+        if (action == save_c)
+        {
+            // Save the new value.
+            persistent_m->setVoltHysteresis(inVoltHysteresis_m->getValue());
+        }
+        else if (action == cancel_c)
+        {
+            inVoltHysteresis_m->setValue(persistent_m->getVoltHysteresis());
         }
     }
     else if (activeWindow_m == windowPickDcDcDelay_c)
@@ -245,13 +332,19 @@ void EcranConfig::drawStatic()
         tft_m->setTextSize(1, 1);
 
         tft_m->setCursor(5, 33+25);
-        tft_m->println("Input volt thresh:");
+        tft_m->println("Volt thresh stop:");
 
         tft_m->setCursor(5, 33+25+25);
-        tft_m->println("Start delay(sec):");
+        tft_m->println("Volt thresh slow:");
 
         tft_m->setCursor(5, 33+25+25+25);
-        tft_m->println("All deadzone:");
+        tft_m->println("volt hysteresis:");
+
+        tft_m->setCursor(5, 33+25+25+25+25);
+        tft_m->println("Start delay(sec):");
+
+        tft_m->setCursor(5, 33+25+25+25+25+25);
+        tft_m->println("Both deadzone(v):");
 
         //inVoltButton_m.drawButton(false);
         backButton_m.drawButton(false);
@@ -263,10 +356,10 @@ void EcranConfig::drawData( )
     tft_m->setTextSize(1, 1);
     //tft_m->setCursor(200, 33+25);
 
-    printFloatAt(inVoltThreshold_m->getValue(), 1, 200, 33+25);
-
-    printFloatAt(chargeStartDelay_m->getValue(), 1, 200, 33+25+25);
-
-    printFloatAt(allDeadZone_m->getValue(), 1, 200, 33+25+25+25);
+    printFloatAt(inVoltThresholdStop_m->getValue(),      1, 200, 33+25);
+    printFloatAt(inVoltThresholdToGoSlow_m->getValue(),  1, 200, 33+25+25);
+    printFloatAt(inVoltHysteresis_m->getValue(),         1, 200, 33+25+25+25);
+    printFloatAt(chargeStartDelay_m->getValue(),         1, 200, 33+25+25+25+25);
+    printFloatAt(allDeadZone_m->getValue(),              1, 200, 33+25+25+25+25+25);
 }
 

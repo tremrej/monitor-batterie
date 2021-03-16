@@ -22,6 +22,8 @@ public:
     EcranConfig( Adafruit_GFX &tft
                , Persistent   &persistent
                , FloatPicker  &inputVoltThreshold
+               , FloatPicker  &inputVoltThresholdToGoSlow
+               , FloatPicker  &inputVoltHysteresis
                , FloatPicker  &chargeStartDelay
                , FloatPicker  &allDeadZone);
     ~EcranConfig();
@@ -40,11 +42,15 @@ public:
 private:
     Adafruit_GFX *tft_m;
     Persistent   *persistent_m;
-    FloatPicker  *inVoltThreshold_m;
+    FloatPicker  *inVoltThresholdStop_m;
+    FloatPicker  *inVoltThresholdToGoSlow_m;
+    FloatPicker  *inVoltHysteresis_m;
     FloatPicker  *chargeStartDelay_m;
     FloatPicker  *allDeadZone_m;
 
     Adafruit_GFX_Button inVoltButton_m;
+    Adafruit_GFX_Button inVoltToGoSlowButton_m;
+    Adafruit_GFX_Button inVoltHystButton_m;
     Adafruit_GFX_Button delayButton_m;
     Adafruit_GFX_Button allDeadZoneButton_m;
     Adafruit_GFX_Button backButton_m;
