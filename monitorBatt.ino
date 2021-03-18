@@ -80,7 +80,7 @@
 //                             address offsetCurrent
 //                             ------- -------------
 AmpMeter ampMeterStarter_g     (0x40, +015.0);
-AmpMeter ampMeterHouse_g       (0x41, -049.0);   // Bridge A0
+AmpMeter ampMeterHouse_g       (0x41, -048.5);   // Bridge A0
 AmpMeter ampMeterAlternator_g  (0x44, -095.0);   // Bridge A1
 AmpMeter ampMeterSolar_g       (0x45,    0.0);   // Bridge A0 & A1
 
@@ -104,11 +104,19 @@ FloatPicker chargeStartDelay_g      = FloatPicker (tft, (char *) "Delai de demar
 FloatPicker allDeadZone_g           = FloatPicker (tft, (char *) "ALl selector deadzone", 0.05, 2.0, 0.01);
 RadioButton chargeMode_g            = RadioButton (tft, (char *) "Charge mode", charModeChoice, chargeModeMax_c);
 
+ChargerControl chargerControl_g( ampMeterStarter_g
+                               , ampMeterHouse_g
+                               , ampMeterAlternator_g
+                               , persistent_g
+                               , chargeMode_g
+                               , pinIgnition, pinDcDcEnabled, pinDcDcSlow);
+
 EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
                                                  , ampMeterStarter_g
                                                  , ampMeterHouse_g
                                                  , ampMeterAlternator_g
                                                  , ampMeterSolar_g
+                                                 , chargerControl_g
                                                  , dimPin
                                                  , pinIgnition
                                                  , pinDcDcEnabled
@@ -121,13 +129,6 @@ EcranConfig ecranConfig_g = EcranConfig( tft
                                        , dcDcInVoltHysteresisPicker_g
                                        , chargeStartDelay_g
                                        , allDeadZone_g);
-
-ChargerControl chargerControl_g( ampMeterStarter_g
-                               , ampMeterHouse_g
-                               , ampMeterAlternator_g
-                               , persistent_g
-                               , chargeMode_g
-                               , pinIgnition, pinDcDcEnabled, pinDcDcSlow);
 
 
 #ifdef NRF52
@@ -192,7 +193,7 @@ void setup() {
 
   // Create the buttons
 
-  if (! ampMeterStarter_g.init(200.0, 0.0005))
+  if (! ampMeterStarter_g.init(200.0, 0.0005))     // shunt 200 Amp, 100 mv
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -204,7 +205,7 @@ void setup() {
   {
       ampMeterStarter_g.start();
   }
-  if (! ampMeterHouse_g.init(200.0, 0.0005))
+  if (! ampMeterHouse_g.init(200.0, 0.0005))     // shunt 200 Amp, 100 mv
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -216,7 +217,7 @@ void setup() {
   {
       ampMeterHouse_g.start();
   }
-  if (! ampMeterAlternator_g.init(50.0, 0.0015))  // The factor 3.3/4.0 is manual adjustment done using another ampMeter as reference.
+  if (! ampMeterAlternator_g.init(50.0, 0.0015))     // Update with actual shunt from BleuSea (50 amp, 50 mv, R=0.001)
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);
@@ -228,7 +229,7 @@ void setup() {
   {
       ampMeterAlternator_g.start();
   }
-  if (! ampMeterSolar_g.init(50.0, 0.0015)) 
+  if (! ampMeterSolar_g.init(50.0, 0.0015))      // shunt 50 Amp, 75 mv
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);

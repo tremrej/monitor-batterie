@@ -8,6 +8,7 @@
 
 #include "Adafruit_GFX.h"    // Adafruit_GFX_Button
 #include "ampMeter.h"        // AmpMeter
+#include "chargerControl.h"
 #include "monitorBatt.h"
 
 // ==================================================================================
@@ -23,6 +24,7 @@ public:
                   , AmpMeter &ampMeterHouse
                   , AmpMeter &ampMeterAlternator
                   , AmpMeter &ampMeterSolar
+                  , ChargerControl &chargerControl
                   , int pinDim
                   , int pinIgnition
                   , int pinRelayDcDcEnable
@@ -52,6 +54,7 @@ private:
     AmpMeter *ampMeterHouse_m;
     AmpMeter *ampMeterAlternator_m;
     AmpMeter *ampMeterSolar_m;
+    ChargerControl *chargerControl_m;
     int       pinDim_m;
     int       pinIgnition_m;
     int       pinRelayDcDcEnable_m;

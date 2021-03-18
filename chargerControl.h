@@ -56,6 +56,10 @@ public:
     void tick();
     void setSlowCharge(bool slowCharge);
 
+    bool isChanging();
+    bool isChangingSlow();
+    bool batterySelectorOnBoth();
+
 private:
 
     static void startHoldoffTimer();

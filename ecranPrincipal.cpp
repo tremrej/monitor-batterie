@@ -52,6 +52,7 @@ EcranPrincipal::EcranPrincipal( Adafruit_GFX &tft
                               , AmpMeter &ampMeterHouse
                               , AmpMeter &ampMeterAlternator
                               , AmpMeter &ampMeterSolar
+                              , ChargerControl &chargerControl
                               , int pinDim
                               , int pinIgnition
                               , int pinRelayDcDcEnable
@@ -61,6 +62,7 @@ EcranPrincipal::EcranPrincipal( Adafruit_GFX &tft
     , ampMeterHouse_m  (&ampMeterHouse)
     , ampMeterAlternator_m  (&ampMeterAlternator)
     , ampMeterSolar_m  (&ampMeterSolar)
+    , chargerControl_m (&chargerControl)
     , pinDim_m         (pinDim)
     , pinIgnition_m    (pinIgnition)
     , pinRelayDcDcEnable_m (pinRelayDcDcEnable)
@@ -189,9 +191,9 @@ void EcranPrincipal::drawStatic()
         tft_m->println("            AH");
 
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("Alternator           amp");
+        tft_m->println("Chgr start           amp");
         tft_m->setCursor(5, tft_m->getCursorY());
-        tft_m->println("     Solar           amp");
+        tft_m->println("Chgr House           amp");
         tft_m->setCursor(5, tft_m->getCursorY());
         tft_m->println(" Time            d h:m:s");
 
@@ -218,6 +220,25 @@ void EcranPrincipal::drawData( )
         //tft_m->print(ttt);
     }
     tft_m->print("Starter");
+
+    // Show charger state
+    tft_m->fillRect(110, 21, 115, 20, rgbTo565(0,0,0));
+    if (chargerControl_m->batterySelectorOnBoth())
+    {
+        tft_m->setTextColor(rgbTo565(235,64,55));    // red
+        tft_m->print(" ==========");
+    }
+    else if (chargerControl_m->isChanging() &&
+             chargerControl_m->isChangingSlow())
+    {
+        tft_m->setTextColor(rgbTo565(104,168,121));    // green-blue
+        tft_m->print(" --> > >--");
+    }
+    else if (chargerControl_m->isChanging())
+    {
+        tft_m->setTextColor(rgbTo565(44,194,33));    // green
+        tft_m->print(" -->>>>>>--");
+    }
 
     tft_m->setCursor(230, tft_m->getCursorY());
     if (ampMeterHouse_m->getAvgCurrent() < 0.0F)

@@ -298,3 +298,19 @@ void ChargerControl::setSlowCharge(bool slowCharge)
     Serial.print("Charge speed ");
     Serial.println(slowCharge? (char *) "slow":(char *) "fast");
 }
+
+bool ChargerControl::isChanging()
+{
+    return fsm_m->getCurrentState() == stateChargerEnabled_m;
+}
+
+bool ChargerControl::isChangingSlow()
+{
+    return fsm_m->getCurrentState() == stateChargerEnabled_m && slowCharge_m;
+}
+
+bool ChargerControl::batterySelectorOnBoth()
+{
+    return selectorBothOn_m;
+}
+
