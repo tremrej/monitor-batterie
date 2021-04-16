@@ -44,7 +44,6 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
 {
     // Definition of states
     stateIdle_m       = new State(NULL, NULL, NULL);
-    stateIgnitionOn_m = new State(NULL, NULL, NULL);
     stateAlternatorOn_m = new State(NULL, NULL, NULL);
     stateChargerEnabled_m = new State(NULL, NULL, NULL);
 
@@ -52,17 +51,10 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     fsm_m = new Fsm(stateIdle_m);
 
     // Definition of the possible transition
-    fsm_m->add_transition( stateIdle_m,           stateIgnitionOn_m,     ignitionTurnedOn_c,             &stopCharger);
-    fsm_m->add_transition( stateIdle_m,           stateAlternatorOn_m,   ignitionTurnedOnAlterOn_c,      &startHoldoffTimer);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
-    fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
+    fsm_m->add_transition( stateIdle_m,           stateAlternatorOn_m,   alternatorTurnedOn_c,           &startHoldoffTimer);
     fsm_m->add_transition( stateAlternatorOn_m,   stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
-    fsm_m->add_transition( stateIgnitionOn_m,     stateAlternatorOn_m,   alternatorTurnedOn_c,           &startHoldoffTimer);
     fsm_m->add_transition( stateAlternatorOn_m,   stateChargerEnabled_m, chargerHoldoffExpired_c,        &startCharger);
     fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           alternatorTurnedOff_c,          &stopCharger);
-    //fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           batterieSelectorAllDetected_c,  &stopCharger);
-    fsm_m->add_transition( stateChargerEnabled_m, stateIdle_m,           ignitionTurnedOff_c,            &stopCharger);
 
     // Set the pointer to the singleton charge controller.
     cc_g = this;
@@ -90,8 +82,7 @@ void ChargerControl::tick( )
     {
         if ( fsm_m->getCurrentState() == stateChargerEnabled_m)
         {
-            fsm_m->trigger(ignitionTurnedOff_c);
-            //stopCharger();
+            fsm_m->trigger(alternatorTurnedOff_c);
         }
         // Nothing else todo
         return;
@@ -130,7 +121,7 @@ void ChargerControl::tick( )
 
     // Check state of alternator
     float alternatorCurrent = ampMeterAlternator_m->getAvgCurrent();
-    if (alternatorCurrent > 0.5)     // TODO Use a configurable value
+    if (alternatorCurrent > 1.0)     // TODO Use a configurable value
     {
         //if (!alternatorOn_m || fsm_m->getCurrentState() != stateAlternatorOn_m)
         if (!alternatorOn_m)

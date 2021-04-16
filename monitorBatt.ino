@@ -217,7 +217,7 @@ void setup() {
   {
       ampMeterHouse_g.start();
   }
-  if (! ampMeterAlternator_g.init(50.0, 0.0015))     // Update with actual shunt from BleuSea (50 amp, 50 mv, R=0.001)
+  if (! ampMeterAlternator_g.init(50.0, 0.001))     // Update with actual shunt from BleuSea (50 amp, 50 mv, R=0.001)
   {
     Serial.println("Failed to find INA219 chip");
     tft.setCursor(5, 20);

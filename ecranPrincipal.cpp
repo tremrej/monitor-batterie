@@ -174,7 +174,7 @@ void EcranPrincipal::drawStatic()
         tft_m->setTextSize(1);
         tft_m->setCursor(5, 15);
         tft_m->setTextColor(ILI9341_WHITE);  tft_m->setTextSize(1);
-        tft_m->println("Moniteur de batterie, v0.1");
+        tft_m->println("Moniteur de batterie, v0.2");
 
 
         tft_m->setTextColor(ILI9341_WHITE);

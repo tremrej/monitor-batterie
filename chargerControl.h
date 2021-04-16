@@ -78,7 +78,6 @@ private:
 
     // List of state
     State *stateIdle_m;
-    State *stateIgnitionOn_m;
     State *stateAlternatorOn_m;
     State *stateChargerEnabled_m;
 
