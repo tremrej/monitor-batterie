@@ -6,8 +6,12 @@
 #ifndef persistent_h
 #define persistent_h
 
+#ifdef ARDUINO_AVR_MEGA2560
 #include "EEPROMex.h"
 #include "EEPROMVar.h"
+#else
+#include "EEPROMVar_mock.h"
+#endif
 
 #define CURRENTVERSION 5    // With hysteresis
 

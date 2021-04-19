@@ -29,7 +29,7 @@ Persistent::~Persistent( )
 
 void Persistent::init( )
 {
-    EEPROM.setMemPool(0, EEPROMSizeMega);
+    EEPROM.setMemPool(0, 4096);
     EEPROM.setMaxAllowedWrites(250);       // Maximum number of write allowed since restart. To prevent run away write.
 
     version_m.restore();
@@ -81,3 +81,7 @@ void Persistent::factoryReset( )
     fullChargeVoltHouse_m.save();
 }
 
+
+#ifndef ARDUINO_AVR_MEGA2560
+EEPROMClassEx EEPROM;
+#endif
