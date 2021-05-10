@@ -96,6 +96,7 @@ private:
     long  chargeStartTime_m;    // milli second timestamp
 
     bool slowCharge_m;
+    bool forceSlowCharge_m;
     unsigned long slowChargeTimestamp_m;
     unsigned long fullChargeTimestamp_m;
     

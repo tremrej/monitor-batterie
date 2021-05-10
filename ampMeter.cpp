@@ -82,6 +82,7 @@ unsigned long AmpMeter::tick()
         timeSpent = micros() - start;
     }
     else
+#ifdef ARDUINO_AVR_MEGA2560
     {
         float demoVolt = 12.05;
         float demoCurrent = -2000.0;    // mA
@@ -113,6 +114,40 @@ unsigned long AmpMeter::tick()
         // On the NRF52 processor, the time in demo mode is less than one micro second. We make it 1 to not block the processing.
         timeSpent = 1;
     }
+#else
+    {
+        float demoVolt = 12.05;
+        float demoCurrent = -2000.0;    // mA
+
+        if (address_m == 0x40)   // Starter batterie
+        {
+            demoVolt = 12.6;
+            demoCurrent = -1000.0;    // mA
+        }
+        if (address_m == 0x41)   // House batterie
+        {
+            demoVolt = 13.0;
+            demoCurrent = -5000.0;    // mA
+        }
+        if (address_m == 0x44)   // Alternator
+        {
+            demoVolt = 14.0;
+            demoCurrent = 10000.0;    // mA
+        }
+
+        if (address_m == 0x45)   // Solar charger
+        {
+            demoVolt = 0.0;
+            demoCurrent = 0.0;    // mA
+        }
+        cumulBusVolt_m    += demoVolt;
+        cumulCurrent_m    += demoCurrent;
+        cumulPower_m      += (demoVolt * demoCurrent);
+        // On the NRF52 processor, the time in demo mode is less than one micro second. We make it 1 to not block the processing.
+        timeSpent = 1;
+    }
+#endif
+
     avgCnt_m++;
 
     return timeSpent;

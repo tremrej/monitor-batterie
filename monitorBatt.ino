@@ -2,6 +2,14 @@
   Monitor of two bank of 12 volts battery 
   plus DC-DC charge controller
 
+Pour compiler:
+Mega:
+Type de carte: Arduino Mega or Mega 2560
+
+Adafruit Feather:
+Type de carte: Adafruit Feather nRF52832
+
+
   Written by Rejean Tremblay 
  ****************************************************/
 
@@ -94,6 +102,7 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
 char *charModeChoice[] = { (char *) "auto"
+                         , (char *) "autoSlow"
                          , (char *) "disabled"
                          , (char *) "on"};
 

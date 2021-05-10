@@ -41,11 +41,22 @@ void printFloatAt(float value, int width, int x, int y);
 #define allDeadZoneButtonH 20
 
 // Back button
-#define backButtonX 320-62
+#define backButtonX 2
 #define backButtonY 206
 #define backButtonW 60
 #define backButtonH 31
 
+// Next button
+#define nextButtonX 320-62
+#define nextButtonY 206
+#define nextButtonW 60
+#define nextButtonH 31
+
+// Back to main button
+#define backToMainButtonX 320/2 - 60/3
+#define backToMainButtonY 206
+#define backToMainButtonW 60
+#define backToMainButtonH 31
 EcranConfig::EcranConfig( Adafruit_GFX &tft
                         , Persistent   &persistent
                         , FloatPicker  &inVoltThresholdStop
@@ -66,6 +77,8 @@ EcranConfig::EcranConfig( Adafruit_GFX &tft
     , delayButton_m()
     , allDeadZoneButton_m()
     , backButton_m()
+    , nextButton_m()
+    , backToMainButton_m()
     , activeWindow_m (windowConfig_c)
     , nextWindow_m (windowConfig_c)
 {
@@ -115,6 +128,16 @@ void EcranConfig::init()
                         , ILI9341_ORANGE  // fill
                         , ILI9341_BLUE   // text
                         , (char *)"back  ", 1, 2);
+    nextButton_m.initButtonUL( tft_m, nextButtonX, nextButtonY, nextButtonW, nextButtonH
+                        , ILI9341_DARKGREY  // outline
+                        , ILI9341_ORANGE  // fill
+                        , ILI9341_BLUE   // text
+                        , (char *)"next  ", 1, 2);
+    backToMainButton_m.initButtonUL( tft_m, backToMainButtonX, backToMainButtonY, backToMainButtonW, backToMainButtonH
+                        , ILI9341_DARKGREY  // outline
+                        , ILI9341_ORANGE  // fill
+                        , ILI9341_BLUE   // text
+                        , (char *)"main  ", 1, 2);
 }
 
 void EcranConfig::processChangeOfWindow(ActiveWindow_e window)
@@ -201,6 +224,16 @@ ActiveWindow_e EcranConfig::checkUI()
             if (backButton_m.contains(x,y))
             {
                 returnedWindow = windowEcran1_c;
+                delay(100);
+            }
+            if (backToMainButton_m.contains(x,y))
+            {
+                returnedWindow = windowEcran1_c;
+                delay(100);
+            }
+            if (nextButton_m.contains(x,y))
+            {
+                returnedWindow = windowChargeMode_c;
                 delay(100);
             }
         }
@@ -348,6 +381,8 @@ void EcranConfig::drawStatic()
 
         //inVoltButton_m.drawButton(false);
         backButton_m.drawButton(false);
+        nextButton_m.drawButton(false);
+        backToMainButton_m.drawButton(false);
         tft_m->setTextSize(1);
 }
 

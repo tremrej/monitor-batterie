@@ -38,6 +38,7 @@ ChargerControl::ChargerControl( AmpMeter &ampMeterStarter
     , houseVoltageBeforeCharge_m (0.0)
     , chargeStartTime_m (0)
     , slowCharge_m(false)
+    , forceSlowCharge_m(false)
     , slowChargeTimestamp_m(0)
     , fullChargeTimestamp_m(0)
 
@@ -87,6 +88,30 @@ void ChargerControl::tick( )
         // Nothing else todo
         return;
     }
+
+    if (chargeMode_m->getValue() == chargeModeAutoSlow_c)
+    {
+        forceSlowCharge_m = true;
+        if ( fsm_m->getCurrentState() != stateChargerEnabled_m)
+        {
+            // We trigger a transition to alternator off. If the alternator is on it will trigger a start charge transition.
+            alternatorOn_m = false;
+            fsm_m->trigger(alternatorTurnedOff_c);
+        }
+    }
+
+    if (chargeMode_m->getValue() == chargeModeAuto_c)
+    {
+        forceSlowCharge_m = false;
+
+        if ( fsm_m->getCurrentState() != stateChargerEnabled_m)
+        {
+            // We trigger a transition to alternator off. If the alternator is on it will trigger a start charge transition.
+            alternatorOn_m = false;
+            fsm_m->trigger(alternatorTurnedOff_c);
+        }
+    }
+
 
     // Check ignition key
     if (digitalRead(pinIgnition_m) == HIGH && !selectorBothOn_m)
@@ -185,8 +210,9 @@ void ChargerControl::tick( )
     }
 
     // Set charge speed
-    if ( fsm_m->getCurrentState() == stateChargerEnabled_m &&
-         ampMeterStarter_m->getAvgBusVolt() < persistent_m->getInputVoltThresholdToGoSlow())
+    if (( fsm_m->getCurrentState() == stateChargerEnabled_m &&
+         ampMeterStarter_m->getAvgBusVolt() < persistent_m->getInputVoltThresholdToGoSlow()) ||
+         forceSlowCharge_m)
     {
         // Too hard on the source batterie. We go slow charge.
         if (!slowCharge_m)

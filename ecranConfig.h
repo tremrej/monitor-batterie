@@ -54,6 +54,8 @@ private:
     Adafruit_GFX_Button delayButton_m;
     Adafruit_GFX_Button allDeadZoneButton_m;
     Adafruit_GFX_Button backButton_m;
+    Adafruit_GFX_Button nextButton_m;
+    Adafruit_GFX_Button backToMainButton_m;
 
     ActiveWindow_e activeWindow_m;
     ActiveWindow_e nextWindow_m;

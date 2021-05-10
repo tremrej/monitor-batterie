@@ -19,9 +19,10 @@ enum ActiveWindow_e {
 
 enum ChargeMode_e {
     chargeModeAuto_c     = 0,
-    chargeModeDisabled_c = 1,
-    chargeModeOn_c       = 2,
-    chargeModeMax_c      = 3
+    chargeModeAutoSlow_c = 1,
+    chargeModeDisabled_c = 2,
+    chargeModeOn_c       = 3,
+    chargeModeMax_c      = 4
 };
 
 #endif  // monitorBatt_h

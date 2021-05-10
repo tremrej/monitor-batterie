@@ -58,6 +58,7 @@ EcranPrincipal::EcranPrincipal( Adafruit_GFX &tft
                               , int pinRelayDcDcEnable
                               , int pinRelayDcDcSlow)
     : tft_m(&tft)
+    , dimLevel_m(95)
     , ampMeterStarter_m(&ampMeterStarter)
     , ampMeterHouse_m  (&ampMeterHouse)
     , ampMeterAlternator_m  (&ampMeterAlternator)

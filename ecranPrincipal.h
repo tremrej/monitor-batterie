@@ -42,7 +42,7 @@ public:
 private:
     Adafruit_GFX *tft_m;
 
-    unsigned int dimLevel_m = 64;   // Backlight dim level, 0..255
+    unsigned int dimLevel_m;   // Backlight dim level, 0..255
 
     static Adafruit_GFX_Button configButton_s;
     static Adafruit_GFX_Button resetButton_s;
