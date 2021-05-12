@@ -39,6 +39,8 @@ public:
 
     void resetAmpHour();
 
+    unsigned long getTimeSinceReset();
+
     float getBusVolt();        // Volt
     float getAvgBusVolt();     // Volt
     float getAvgCurrent();     // Amp
@@ -47,7 +49,10 @@ public:
 
     float getAmpHour();
 
-    unsigned long getTimeSinceReset();
+    bool getBusVoltWatermark(float *high, float*low);
+    bool getCurrentWatermark(float *high, float*low);
+    void resetWatermark();
+
 
 private:
 
@@ -71,6 +76,11 @@ private:
     float avgCurrent_m;          // Amp
     float avgPower_m;            // Watt
     float ampSecondLastAvg_m;    // AmpSecond
+
+    float voltMin_m;             // Volt
+    float voltMax_m;             // Volt
+    float ampMin_m;              // Amp
+    float ampMax_m;              // Amp
 
     float ampSecondSinceReset_m;
 };

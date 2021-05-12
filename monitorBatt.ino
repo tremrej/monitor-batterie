@@ -20,6 +20,7 @@ Type de carte: Adafruit Feather nRF52832
 #include "Fonts/FreeMono9pt7b.h"
 #include "ampMeter.h"
 #include "ecranPrincipal.h"
+#include "ecranWatermark.h"
 #include "ecranConfig.h"
 #include "floatPicker.h"
 #include "radioButton.h"
@@ -104,7 +105,7 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 char *charModeChoice[] = { (char *) "auto"
                          , (char *) "autoSlow"
                          , (char *) "disabled"
-                         , (char *) "on"};
+                         };
 
 FloatPicker dcDcInVoltThresPicker_g = FloatPicker (tft, (char *) "Input volt threshold", 11.0, 13.0, 0.01);
 FloatPicker dcDcInVoltThresToGoSlowPicker_g = FloatPicker (tft, (char *) "Slow input volt", 11.0, 13.0, 0.01);
@@ -130,6 +131,12 @@ EcranPrincipal ecranPrincipal_g = EcranPrincipal ( tft
                                                  , pinIgnition
                                                  , pinDcDcEnabled
                                                  , pinDcDcSlow);
+
+EcranWatermark ecranWatermark_g = EcranWatermark ( tft
+                                                 , ampMeterStarter_g
+                                                 , ampMeterHouse_g
+                                                 , ampMeterAlternator_g
+                                                 , ampMeterSolar_g);
 
 EcranConfig ecranConfig_g = EcranConfig( tft
                                        , persistent_g
@@ -252,6 +259,7 @@ void setup() {
   }
 
   ecranPrincipal_g.init();
+  ecranWatermark_g.init();
   ecranConfig_g.init();
 
   // Setup measurement timer
@@ -295,6 +303,12 @@ void processChangeOfWindow(ActiveWindow_e window)
         {
             ecranPrincipal_g.drawStatic();
             ecranPrincipal_g.drawData();
+            break;
+        }
+        case windowWatermark_c:
+        {
+            ecranWatermark_g.drawStatic();
+            ecranWatermark_g.drawData();
             break;
         }
 //        case windowPickDcDcInVoltThres_c:
@@ -347,9 +361,13 @@ void takeMeasurementAndDisplay(bool display)
             ampMeterHouse_g.average();  // Calculate average since last average.
             ampMeterAlternator_g.average();  // Calculate average since last average.
             ampMeterSolar_g.average();  // Calculate average since last average.
-            if (display)
+            if (activeWindow_g == windowEcran1_c)
             {
                 ecranPrincipal_g.drawData();
+            }
+            else if (activeWindow_g == windowWatermark_c)
+            {
+                ecranWatermark_g.drawData();
             }
             avgCnt = 0;
 
@@ -401,6 +419,11 @@ void loop(void) {
         case windowEcran1_c:
         {
             nextWindow_g = ecranPrincipal_g.checkUI();
+            break;
+        }
+        case windowWatermark_c:
+        {
+            nextWindow_g = ecranWatermark_g.checkUI();
             break;
         }
         case windowConfig_c:

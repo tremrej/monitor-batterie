@@ -96,7 +96,7 @@ void EcranPrincipal::init()
                         , ILI9341_DARKGREY  // outline
                         , 0xC958  // fill
                         , 0x79EE   // text
-                        , (char *)"off", 1, 2);
+                        , (char *)"HL", 1, 2);
     backButton_s.initButtonUL( tft_m, backButtonX, backButtonY, backButtonW, backButtonH
                         , ILI9341_DARKGREY  // outline
                         , ILI9341_ORANGE  // fill
@@ -142,7 +142,7 @@ ActiveWindow_e EcranPrincipal::checkUI()
         if (enableDcDcButton_s.contains(x,y))
         {
             enableDcDcButton_s.drawButton();
-            returnedWindow = windowChargeMode_c;
+            returnedWindow = windowWatermark_c;
             delay(100);
         }
         if (dimButton_s.contains(x,y))
@@ -177,9 +177,9 @@ void EcranPrincipal::drawStatic()
         tft_m->setTextColor(ILI9341_WHITE);  tft_m->setTextSize(1);
 
 #ifdef ARDUINO_AVR_MEGA2560
-        tft_m->println("Moniteur de batterie, v0.2");
+        tft_m->println("Moniteur de batterie, v0.3");
 #else
-        tft_m->println("Moniteur de batterie, t0.2");
+        tft_m->println("Moniteur de batterie, t0.3");
 #endif
 
 

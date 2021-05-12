@@ -47,6 +47,8 @@ void AmpMeter::start()
     avgPower_m   = 0.0;
     ampSecondLastAvg_m = 0.0;
     ampSecondSinceReset_m = 0.0;
+
+    resetWatermark();
 }
 
 void AmpMeter::resetAmpHour()
@@ -55,6 +57,20 @@ void AmpMeter::resetAmpHour()
 //    timestampResetMicro_m = micros();
     timestampResetMilli_m = millis();
 }
+
+unsigned long AmpMeter::getTimeSinceReset()
+{
+    return timestampResetMilli_m;
+}
+
+void AmpMeter::resetWatermark()
+{
+    voltMin_m = +999.0;
+    voltMax_m = -999.0;
+    ampMin_m  = +999*1000.0;     //ma
+    ampMax_m  = -999*1000.0;     //ma
+}
+
 
 unsigned long AmpMeter::tick()
 {
@@ -84,69 +100,68 @@ unsigned long AmpMeter::tick()
     else
 #ifdef ARDUINO_AVR_MEGA2560
     {
-        float demoVolt = 12.05;
-        float demoCurrent = -2000.0;    // mA
-
         if (address_m == 0x40)   // Starter batterie
         {
-            demoVolt = 0.0;
-            demoCurrent = 0.0;    // mA
+            volt = 0.0;
+            curr = 0.0;    // mA
         }
         if (address_m == 0x41)   // House batterie
         {
-            demoVolt = 0.0;
-            demoCurrent = 0.0;    // mA
+            volt = 0.0;
+            curr = 0.0;    // mA
         }
         if (address_m == 0x44)   // Alternator
         {
-            demoVolt = 0.0;
-            demoCurrent = 0.0;    // mA
+            volt = 0.0;
+            curr = 0.0;    // mA
         }
 
         if (address_m == 0x45)   // Solar charger
         {
-            demoVolt = 0.0;
-            demoCurrent = 0.0;    // mA
+            volt = 0.0;
+            curr = 0.0;    // mA
         }
-        cumulBusVolt_m    += demoVolt;
-        cumulCurrent_m    += demoCurrent;
-        cumulPower_m      += (demoVolt * demoCurrent);
+        cumulBusVolt_m    += volt;
+        cumulCurrent_m    += curr;
+        cumulPower_m      += (volt * curr);
         // On the NRF52 processor, the time in demo mode is less than one micro second. We make it 1 to not block the processing.
         timeSpent = 1;
     }
 #else
     {
-        float demoVolt = 12.05;
-        float demoCurrent = -2000.0;    // mA
-
         if (address_m == 0x40)   // Starter batterie
         {
-            demoVolt = 12.6;
-            demoCurrent = -1000.0;    // mA
+            volt = 12.6;
+            curr = -1000.0;    // mA
         }
         if (address_m == 0x41)   // House batterie
         {
-            demoVolt = 13.0;
-            demoCurrent = -5000.0;    // mA
+            volt = 13.0;
+            curr = -5000.0;    // mA
         }
         if (address_m == 0x44)   // Alternator
         {
-            demoVolt = 14.0;
-            demoCurrent = 10000.0;    // mA
+            volt = 14.0;
+            curr = 10000.0;    // mA
         }
 
         if (address_m == 0x45)   // Solar charger
         {
-            demoVolt = 0.0;
-            demoCurrent = 0.0;    // mA
+            volt = 0.0;
+            curr = 0.0;    // mA
         }
-        cumulBusVolt_m    += demoVolt;
-        cumulCurrent_m    += demoCurrent;
-        cumulPower_m      += (demoVolt * demoCurrent);
+        cumulBusVolt_m    += volt;
+        cumulCurrent_m    += curr;
+        cumulPower_m      += (volt * curr);
         // On the NRF52 processor, the time in demo mode is less than one micro second. We make it 1 to not block the processing.
         timeSpent = 1;
     }
 #endif
+
+    if (volt < voltMin_m) voltMin_m = volt;
+    if (volt > voltMax_m) voltMax_m = volt;
+    if (curr < ampMin_m) ampMin_m = curr;
+    if (curr > ampMax_m) ampMax_m = curr;
 
     avgCnt_m++;
 
@@ -211,8 +226,17 @@ float AmpMeter::getAmpHour()
     return ampSecondSinceReset_m / 3600000000.0;    // 3600000000 micro second per hour
 }
 
-unsigned long AmpMeter::getTimeSinceReset()
+bool AmpMeter::getBusVoltWatermark(float *high, float*low)
 {
-    return timestampResetMilli_m;
+    *high = voltMax_m;
+    *low  = voltMin_m;
+    return true;
+}
+
+bool AmpMeter::getCurrentWatermark(float *high, float*low)
+{
+    *high = (ampMax_m+ampOffset_m)/1000;
+    *low  = (ampMin_m+ampOffset_m)/1000;
+    return true;
 }
 

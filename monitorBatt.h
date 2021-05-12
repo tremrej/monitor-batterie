@@ -8,6 +8,7 @@
 
 enum ActiveWindow_e {
     windowEcran1_c,
+    windowWatermark_c,
     windowConfig_c,
     windowPickDcDcInVoltThres_c,
     windowPickDcDcInVoltThresToGoSlow_c,
@@ -21,8 +22,7 @@ enum ChargeMode_e {
     chargeModeAuto_c     = 0,
     chargeModeAutoSlow_c = 1,
     chargeModeDisabled_c = 2,
-    chargeModeOn_c       = 3,
-    chargeModeMax_c      = 4
+    chargeModeMax_c      = 3
 };
 
 #endif  // monitorBatt_h
