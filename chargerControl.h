@@ -88,6 +88,7 @@ private:
 
     // Local state
     bool ignitionOn_m;
+    unsigned long ignitionStartTimestamp_milli;
     bool alternatorOn_m;
     bool selectorBothOn_m;
     long selectorOnBothBeginTimestamp_m;    // millisec

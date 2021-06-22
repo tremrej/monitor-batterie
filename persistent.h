@@ -13,7 +13,7 @@
 #include "EEPROMVar_mock.h"
 #endif
 
-#define CURRENTVERSION 5    // With hysteresis
+#define CURRENTVERSION 6    // With hysteresis
 
 // ==================================================================================
 //  @class Persistent
@@ -27,7 +27,7 @@ public:
     Persistent( );
     ~Persistent();
 
-    void factoryReset();
+    void factoryReset(byte fromVersion);
     void setVersion(byte version) { version_m = version; version_m.save(); };
     byte getVersion()             { return version_m; };
     void init();
@@ -61,8 +61,12 @@ public:
 
     void  setFullChargeVoltHouse(float value) { fullChargeVoltHouse_m = value; fullChargeVoltHouse_m.save(); };
     float getFullChargeVoltHouse()            { return fullChargeVoltHouse_m; };
-private:
 
+    EEPROMVar<unsigned long> motorSecond_m;
+private:
+ 
+    // Possible enhancement/simplification: make these member attribut public then there is no need to have dedicated access/setter function.
+    // See motorSecond_m as example.
     EEPROMVar<byte>  version_m;
     EEPROMVar<float> inputVoltThreshold_m;    // Threshold to stop the charge
     EEPROMVar<float> inputVoltThresholdToGoSlow_m;    // Threshold to go slow charge

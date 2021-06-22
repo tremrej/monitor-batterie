@@ -88,7 +88,7 @@ Type de carte: Adafruit Feather nRF52832
 // Somehow the INA219 doesn't indicate zero when there is no current. I apply a offset if need be.
 //                             address offsetCurrent
 //                             ------- -------------
-AmpMeter ampMeterStarter_g     (0x40, +015.0);
+AmpMeter ampMeterStarter_g     (0x40, +000.0);
 AmpMeter ampMeterHouse_g       (0x41, -048.5);   // Bridge A0
 AmpMeter ampMeterAlternator_g  (0x44, -095.0);   // Bridge A1
 AmpMeter ampMeterSolar_g       (0x45,    0.0);   // Bridge A0 & A1

@@ -20,6 +20,7 @@ Persistent::Persistent()
     , capacityHouse_m(75)
     , fullChargeVoltStarter_m(14.3)
     , fullChargeVoltHouse_m(14.3)
+    , motorSecond_m(0)
 {
 }
 
@@ -46,39 +47,52 @@ void Persistent::init( )
         capacityHouse_m.restore();
         fullChargeVoltStarter_m.restore();
         fullChargeVoltHouse_m.restore();
+        motorSecond_m.restore();
     }
     else
     {
-        factoryReset();
+        factoryReset(version_m);
     }
 }
 
-void Persistent::factoryReset( )
+void Persistent::factoryReset(byte fromVersion)
 {
     Serial.println("Factory reset");
+    if (fromVersion < 5)
+    {
+        // Bring it up to 5.
+        inputVoltThreshold_m = 11.25;
+        inputVoltThreshold_m.save();
+        inputVoltThresholdToGoSlow_m = 12.1;
+        inputVoltThresholdToGoSlow_m.save();
+        slowHysteresis_m = 2.2;
+        slowHysteresis_m.save();
+        delay_m = 10;
+        delay_m.save();
+        allDeadZone_m = 0.3;
+        allDeadZone_m.save();
+        efficiencyOfCharge_m = 90;   // %
+        efficiencyOfCharge_m.save();
+        capacityStarter_m = 90;   // AH
+        capacityStarter_m.save();
+        capacityHouse_m = 75;   // AH
+        capacityHouse_m.save();
+        fullChargeVoltStarter_m = 14.3;
+        fullChargeVoltStarter_m.save();
+        fullChargeVoltHouse_m = 14.3;
+        fullChargeVoltHouse_m.save();
+     
+        fromVersion == 5;
+    }
+    if (fromVersion == 5)
+    {
+        // Only reset xxx
+        motorSecond_m = 0;
+        motorSecond_m.save();
+    }
+
     version_m = CURRENTVERSION;
     version_m.save();
-
-    inputVoltThreshold_m = 11.25;
-    inputVoltThreshold_m.save();
-    inputVoltThresholdToGoSlow_m = 12.1;
-    inputVoltThresholdToGoSlow_m.save();
-    slowHysteresis_m = 2.2;
-    slowHysteresis_m.save();
-    delay_m = 10;
-    delay_m.save();
-    allDeadZone_m = 0.3;
-    allDeadZone_m.save();
-    efficiencyOfCharge_m = 90;   // %
-    efficiencyOfCharge_m.save();
-    capacityStarter_m = 90;   // AH
-    capacityStarter_m.save();
-    capacityHouse_m = 75;   // AH
-    capacityHouse_m.save();
-    fullChargeVoltStarter_m = 14.3;
-    fullChargeVoltStarter_m.save();
-    fullChargeVoltHouse_m = 14.3;
-    fullChargeVoltHouse_m.save();
 }
 
 

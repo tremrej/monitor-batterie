@@ -129,6 +129,7 @@ void ChargerControl::tick( )
         {
             Serial.println("Ignition turned on");
             ignitionOn_m = true;
+            ignitionStartTimestamp_milli = millis();
             // Debounce
             delay(10);
         }
@@ -139,6 +140,8 @@ void ChargerControl::tick( )
         {
             fsm_m->trigger(ignitionTurnedOff_c);
             Serial.println("Ignition turned off");
+            persistent_m->motorSecond_m += persistent_m->motorSecond_m + ((millis()-ignitionStartTimestamp_milli)/1000);
+            persistent_m->motorSecond_m.save();
             ignitionOn_m = false;
             delay(10);
         }
