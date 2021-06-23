@@ -334,3 +334,14 @@ bool ChargerControl::batterySelectorOnBoth()
     return selectorBothOn_m;
 }
 
+unsigned long ChargerControl::currentMotorRunTime()
+{
+    unsigned long deltaT = 0;
+    if (ignitionOn_m)
+    {
+        deltaT = (millis()-ignitionStartTimestamp_milli)/1000;
+    }
+
+    return deltaT;
+}
+

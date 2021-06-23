@@ -62,8 +62,9 @@ public:
     void  setFullChargeVoltHouse(float value) { fullChargeVoltHouse_m = value; fullChargeVoltHouse_m.save(); };
     float getFullChargeVoltHouse()            { return fullChargeVoltHouse_m; };
 
+    // Note: always add new attribute at the bottom of the list.
+
     EEPROMVar<unsigned long> motorSecond_m;
-private:
  
     // Possible enhancement/simplification: make these member attribut public then there is no need to have dedicated access/setter function.
     // See motorSecond_m as example.
@@ -78,6 +79,9 @@ private:
     EEPROMVar<float> capacityHouse_m;
     EEPROMVar<float> fullChargeVoltStarter_m;
     EEPROMVar<float> fullChargeVoltHouse_m;
+
+
+private:
 
 };
 

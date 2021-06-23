@@ -9,7 +9,8 @@
 // Definition of class member
 
 Persistent::Persistent()
-    : version_m(0)
+    : motorSecond_m(0)
+    , version_m(0)
     , inputVoltThreshold_m(11.25)
     , inputVoltThresholdToGoSlow_m(12.1)
     , slowHysteresis_m(2.2)
@@ -20,7 +21,6 @@ Persistent::Persistent()
     , capacityHouse_m(75)
     , fullChargeVoltStarter_m(14.3)
     , fullChargeVoltHouse_m(14.3)
-    , motorSecond_m(0)
 {
 }
 
@@ -69,7 +69,7 @@ void Persistent::factoryReset(byte fromVersion)
         slowHysteresis_m.save();
         delay_m = 10;
         delay_m.save();
-        allDeadZone_m = 0.3;
+        allDeadZone_m = 0.1;
         allDeadZone_m.save();
         efficiencyOfCharge_m = 90;   // %
         efficiencyOfCharge_m.save();
@@ -82,7 +82,7 @@ void Persistent::factoryReset(byte fromVersion)
         fullChargeVoltHouse_m = 14.3;
         fullChargeVoltHouse_m.save();
      
-        fromVersion == 5;
+        fromVersion = 5;
     }
     if (fromVersion == 5)
     {

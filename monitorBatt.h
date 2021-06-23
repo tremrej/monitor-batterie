@@ -9,6 +9,7 @@
 enum ActiveWindow_e {
     windowEcran1_c,
     windowWatermark_c,
+    windowMotor_c,
     windowConfig_c,
     windowPickDcDcInVoltThres_c,
     windowPickDcDcInVoltThresToGoSlow_c,

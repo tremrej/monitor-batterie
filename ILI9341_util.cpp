@@ -77,6 +77,37 @@ void printTimeFromMilliSec(unsigned long milliSec, int x, int y)
     tft.print(ti);
 }
 
+void printMotorTimeFromSec(unsigned long milliSec, int x, int y)
+{
+    // format: d hh:mm:ss
+
+    float ttt;
+    int ti;
+
+    tft.fillRect(x-4, y-13, 117, 20, rgbTo565(70,80,90));
+    tft.setCursor(x,y);
+
+    tft.setTextColor(ILI9341_WHITE);  tft.setTextSize(1);
+
+    // hours
+    ttt = milliSec/(60*60);
+    ti = (int)trunc(ttt);
+    if (ti < 10) tft.print("0");
+    tft.print(ti); tft.print(":");
+
+    // minutes
+    ttt = milliSec/(60);
+    ti = (int)trunc(ttt)%60;
+    if (ti < 10) tft.print("0");
+    tft.print(ti); tft.print(":");
+
+    // seconds
+    ti = (milliSec%60);
+    if (ti < 10) tft.print("0");
+    if (ti < 0) ti = 0;
+    tft.print(ti);
+}
+
 void printFloatAt(float value, int textSizeY, int x, int y)
 {
     tft.setTextSize(1,textSizeY);

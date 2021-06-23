@@ -21,6 +21,7 @@ Type de carte: Adafruit Feather nRF52832
 #include "ampMeter.h"
 #include "ecranPrincipal.h"
 #include "ecranWatermark.h"
+#include "ecranMotor.h"
 #include "ecranConfig.h"
 #include "floatPicker.h"
 #include "radioButton.h"
@@ -137,6 +138,10 @@ EcranWatermark ecranWatermark_g = EcranWatermark ( tft
                                                  , ampMeterHouse_g
                                                  , ampMeterAlternator_g
                                                  , ampMeterSolar_g);
+
+EcranMotor ecranMotor_g = EcranMotor ( tft
+                                     , persistent_g
+                                     , chargerControl_g);
 
 EcranConfig ecranConfig_g = EcranConfig( tft
                                        , persistent_g
@@ -260,6 +265,7 @@ void setup() {
 
   ecranPrincipal_g.init();
   ecranWatermark_g.init();
+  ecranMotor_g.init();
   ecranConfig_g.init();
 
   // Setup measurement timer
@@ -309,6 +315,12 @@ void processChangeOfWindow(ActiveWindow_e window)
         {
             ecranWatermark_g.drawStatic();
             ecranWatermark_g.drawData();
+            break;
+        }
+        case windowMotor_c:
+        {
+            ecranMotor_g.drawStatic();
+            ecranMotor_g.drawData();
             break;
         }
 //        case windowPickDcDcInVoltThres_c:
@@ -369,6 +381,10 @@ void takeMeasurementAndDisplay(bool display)
             {
                 ecranWatermark_g.drawData();
             }
+            else if (activeWindow_g == windowMotor_c)
+            {
+                ecranMotor_g.drawData();
+            }
             avgCnt = 0;
 
             // Toggle the led
@@ -424,6 +440,11 @@ void loop(void) {
         case windowWatermark_c:
         {
             nextWindow_g = ecranWatermark_g.checkUI();
+            break;
+        }
+        case windowMotor_c:
+        {
+            nextWindow_g = ecranMotor_g.checkUI();
             break;
         }
         case windowConfig_c:

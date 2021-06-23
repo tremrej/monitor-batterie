@@ -9,6 +9,7 @@
 #include "Adafruit_ILI9341.h"
 
 void printTimeFromMilliSec(unsigned long milliSec, int x, int y);
+void printMotorTimeFromSec(unsigned long milliSec, int x, int y);
 
 void printFloatAt(float value, int width, int x, int y);
 

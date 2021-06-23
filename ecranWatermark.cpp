@@ -116,7 +116,7 @@ ActiveWindow_e EcranWatermark::checkUI()
         }
         if (nextButton_m.contains(x,y))
         {
-            returnedWindow = windowWatermark_c;
+            returnedWindow = windowMotor_c;
             delay(100);
         }
     }
@@ -169,7 +169,7 @@ void EcranWatermark::drawStatic()
         resetButton_m.drawButton(false);
         backButton_m.drawButton(false);
         backToMainButton_m.drawButton(false);
-        //nextButton_m.drawButton(false);
+        nextButton_m.drawButton(false);
         tft_m->setTextSize(1);
 }
 

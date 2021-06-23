@@ -23,11 +23,15 @@ void printFloatAt(float value, int width, int x, int y);
 #define resetButtonW 40
 #define resetButtonH 40
 
-// DC-DC charger enabled button
-#define enableDcDcButtonX 278
-#define enableDcDcButtonY 215
-#define enableDcDcButtonW 40
-#define enableDcDcButtonH 31
+// Next button
+#define nextButtonX 320-62
+#define nextButtonY 206
+#define nextButtonW 60
+#define nextButtonH 31
+//#define nextButtonX 278
+//#define nextButtonY 215
+//#define nextButtonW 40
+//#define nextButtonH 31
 
 // Back button
 #define backButtonX 320-62
@@ -43,7 +47,7 @@ void printFloatAt(float value, int width, int x, int y);
 
 Adafruit_GFX_Button EcranPrincipal::configButton_s     = Adafruit_GFX_Button();
 Adafruit_GFX_Button EcranPrincipal::resetButton_s      = Adafruit_GFX_Button();
-Adafruit_GFX_Button EcranPrincipal::enableDcDcButton_s = Adafruit_GFX_Button();
+Adafruit_GFX_Button EcranPrincipal::nextButton_s = Adafruit_GFX_Button();
 Adafruit_GFX_Button EcranPrincipal::backButton_s       = Adafruit_GFX_Button();
 Adafruit_GFX_Button EcranPrincipal::dimButton_s        = Adafruit_GFX_Button();
 
@@ -91,12 +95,12 @@ void EcranPrincipal::init()
                         //, ILI9341_GREEN  // fill
                         //, ILI9341_BLUE   // text
                         , (char *)"rst", 1, 2);
-    enableDcDcButton_s.initButtonUL( tft_m, enableDcDcButtonX, enableDcDcButtonY
-                                   , enableDcDcButtonW, enableDcDcButtonH
+    nextButton_s.initButtonUL( tft_m, nextButtonX, nextButtonY
+                                   , nextButtonW, nextButtonH
                         , ILI9341_DARKGREY  // outline
                         , 0xC958  // fill
                         , 0x79EE   // text
-                        , (char *)"HL", 1, 2);
+                        , (char *)"next", 1, 2);
     backButton_s.initButtonUL( tft_m, backButtonX, backButtonY, backButtonW, backButtonH
                         , ILI9341_DARKGREY  // outline
                         , ILI9341_ORANGE  // fill
@@ -139,9 +143,9 @@ ActiveWindow_e EcranPrincipal::checkUI()
             returnedWindow = windowConfig_c;
             delay(100);
         }
-        if (enableDcDcButton_s.contains(x,y))
+        if (nextButton_s.contains(x,y))
         {
-            enableDcDcButton_s.drawButton();
+            nextButton_s.drawButton();
             returnedWindow = windowWatermark_c;
             delay(100);
         }
@@ -204,7 +208,7 @@ void EcranPrincipal::drawStatic()
         tft_m->println(" Time            d h:m:s");
 
         resetButton_s.drawButton(false);
-        enableDcDcButton_s.drawButton(enableDcDcButton_s.isPressed());
+        nextButton_s.drawButton(nextButton_s.isPressed());
         configButton_s.drawButton(false);
         dimButton_s.drawButton(false);
         tft_m->setTextSize(1);

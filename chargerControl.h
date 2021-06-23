@@ -60,6 +60,8 @@ public:
     bool isChangingSlow();
     bool batterySelectorOnBoth();
 
+    unsigned long currentMotorRunTime();   // Seconds
+
 private:
 
     static void startHoldoffTimer();

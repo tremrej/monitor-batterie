@@ -389,7 +389,6 @@ void EcranConfig::drawStatic()
 void EcranConfig::drawData( )
 {
     tft_m->setTextSize(1, 1);
-    //tft_m->setCursor(200, 33+25);
 
     printFloatAt(inVoltThresholdStop_m->getValue(),      1, 200, 33+25);
     printFloatAt(inVoltThresholdToGoSlow_m->getValue(),  1, 200, 33+25+25);

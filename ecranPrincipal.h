@@ -46,7 +46,7 @@ private:
 
     static Adafruit_GFX_Button configButton_s;
     static Adafruit_GFX_Button resetButton_s;
-    static Adafruit_GFX_Button enableDcDcButton_s;
+    static Adafruit_GFX_Button nextButton_s;
     static Adafruit_GFX_Button backButton_s;
     static Adafruit_GFX_Button dimButton_s;
 
