@@ -181,9 +181,9 @@ void EcranPrincipal::drawStatic()
         tft_m->setTextColor(ILI9341_WHITE);  tft_m->setTextSize(1);
 
 #ifdef ARDUINO_AVR_MEGA2560
-        tft_m->println("Moniteur de batterie, v0.3");
+        tft_m->println("Moniteur de batterie, v0.4");
 #else
-        tft_m->println("Moniteur de batterie, t0.3");
+        tft_m->println("Moniteur de batterie, t0.4");
 #endif
 
 

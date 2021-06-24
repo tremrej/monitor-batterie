@@ -356,9 +356,10 @@ void EcranConfig::drawStatic()
         //tft_m->drawFastHLine(0,18+25+(25*6)+4,tft_m->width(), rgbTo565(90,90,90));
 
         tft_m->setTextSize(1,2);
-        tft_m->setCursor(15*6, 25);     // 15 mm x 6 pixel per mm
+        tft_m->setCursor(10*6, 25);     // 10 mm x 6 pixel per mm
         tft_m->setTextColor(ILI9341_WHITE);
-        tft_m->println("Configuration");
+        tft_m->print("Configuration   v:");
+        tft_m->print(persistent_m->version_m);
 
 
         tft_m->setTextColor(ILI9341_WHITE);

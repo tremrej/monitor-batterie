@@ -162,8 +162,6 @@ void EcranMotor::drawData( )
     tft_m->setTextSize(1, 1);
 
     printMotorTimeFromSec(chargerControl_m->currentMotorRunTime(),      200, 33+25);
-    printMotorTimeFromSec(trunc(millis()/1000)+(1234*60*60),                  200, 33+25+25);
-    //printMotorTimeFromMilliSec(ttt,                  200, 33+25+25);
-    //printMotorTimeFromMilliSec(persistent_m->motorSecond_m,                  200, 33+25+25);
+    printMotorTimeFromSec(persistent_m->motorSecond_m,                  200, 33+25+25);
 }
 
