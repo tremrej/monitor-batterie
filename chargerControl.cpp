@@ -85,7 +85,7 @@ void ChargerControl::tick( )
         {
             fsm_m->trigger(alternatorTurnedOff_c);
         }
-        // Nothing else todo
+        checkIgnition();
         return;
     }
 
@@ -114,38 +114,7 @@ void ChargerControl::tick( )
 
 
     // Check ignition key
-    if (digitalRead(pinIgnition_m) == HIGH && !selectorBothOn_m)
-    {
-            if (!alternatorOn_m)
-            {
-                fsm_m->trigger(ignitionTurnedOn_c);
-            }
-            else
-            {
-                // The alternator is already on for some reason
-                fsm_m->trigger(ignitionTurnedOnAlterOn_c);
-            }
-        if (!ignitionOn_m)
-        {
-            Serial.println("Ignition turned on");
-            ignitionOn_m = true;
-            ignitionStartTimestamp_milli = millis();
-            // Debounce
-            delay(10);
-        }
-    }
-    else
-    {
-        if (ignitionOn_m)
-        {
-            fsm_m->trigger(ignitionTurnedOff_c);
-            Serial.println("Ignition turned off");
-            persistent_m->motorSecond_m += persistent_m->motorSecond_m + ((millis()-ignitionStartTimestamp_milli)/1000);
-            persistent_m->motorSecond_m.save();
-            ignitionOn_m = false;
-            delay(10);
-        }
-    }
+    checkIgnition();
 
     // Check state of alternator
     float alternatorCurrent = ampMeterAlternator_m->getAvgCurrent();
@@ -345,3 +314,30 @@ unsigned long ChargerControl::currentMotorRunTime()
     return deltaT;
 }
 
+void ChargerControl::checkIgnition()
+{
+//    Serial.print("Ignition: ");
+//    Serial.println(analogRead(pinIgnition_m));
+    if (digitalRead(pinIgnition_m) == HIGH)
+    {
+        if (!ignitionOn_m)
+        {
+            Serial.println("Ignition turned on");
+            ignitionOn_m = true;
+            ignitionStartTimestamp_milli = millis();
+            // Debounce
+            delay(10);
+        }
+    }
+    else
+    {
+        if (ignitionOn_m)
+        {
+            Serial.println("Ignition turned off");
+            persistent_m->motorSecond_m = persistent_m->motorSecond_m + ((millis()-ignitionStartTimestamp_milli)/1000);
+            persistent_m->motorSecond_m.save();
+            ignitionOn_m = false;
+            delay(10);
+        }
+    }
+}

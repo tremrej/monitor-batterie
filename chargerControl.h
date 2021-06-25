@@ -21,14 +21,6 @@ class ChargerControl
 {
 public:
 
-    enum State_e {
-        idle_c,
-        ignitionOn_c,
-        alternatorOn_c,
-        chargerOn_c,
-        ignitionOff_c
-    };
-
     enum Event_e {
         ignitionTurnedOn_c,
         ignitionTurnedOnAlterOn_c,
@@ -63,6 +55,8 @@ public:
     unsigned long currentMotorRunTime();   // Seconds
 
 private:
+
+    void checkIgnition();
 
     static void startHoldoffTimer();
     static void holdoffTimerExpired();
