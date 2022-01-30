@@ -26,26 +26,31 @@ I use a [DC-DC charger from Renogy](https://ca.renogy.com/20a-12v-dc-to-dc-on-bo
 ##Custom board
 To help with connecting everything together I built few boards.
 * A board with two INA219 for the main batterie
-![double INA219](.images/windscot_DC_DC_BattShuntBoard_bb.png)
+![double INA219](./images/windscot_DC_DC_BattShuntBoard_bb.png)
 * Two board with one INA219 for the solar charger and alternator
-![single INA219](.images/windscot_DC_DC_alternatorBoard_bb.png)
+![single INA219](./images/windscot_DC_DC_alternatorBoard_bb.png)
 * A board for the relay to control the DC-DC charger.
-![relay](.images/windscot_DC_DC_RelayBoard_bb.png)
+![relay](./images/windscot_DC_DC_RelayBoard_bb.png)
 * An arduino prototype board.
-![relay](.images/Windscot_monitorBattery_connection.png)
+![relay](./images/Windscot_monitorBattery_connection.png)
 * I built custom boxes for all these boards using a 3D printer.
 
 ##Schematic diagram
-![schematic](.images/Windscot_electricDiagram_v2.png)
+![schematic](./images/Windscot_electricDiagram_v2.png)
 
 ##Some pictures of the installation
-![shunt battries](.images/shunt_batt.png)
-![shunt alternator](.images/shut_alternator.png)
-![shunt relay](.images/shunt_and_relay_board_2.png)
+![shunt battries](./images/shunt_batt.png)
+
+![shunt alternator](./images/shut_alternator.png)
+
+![shunt relay](./images/shunt_and_relay_board_2.png)
 
 ##Controler display
-[Main screen](.images/ecran_main.png)
-[Screen watermark](.images/ecran_watermark.png)
-[Screen configuration](.images/ecran_config2.jpg)
-[Screen motor timer](.images/ecran_motor.jpg)
+[Main screen](./images/ecran_main.png)
+
+[Screen watermark](./images/ecran_watermark.png)
+
+[Screen configuration](./images/ecran_config2.jpg)
+
+[Screen motor timer](./images/ecran_motor.jpg)
 
