@@ -23,7 +23,7 @@ Here's the schematic diagram of the different component
 List of hardware used in this project
 * A main processor is an Arduino Mega. I started with an Ardunio Uno but I ran out of io ports.
 * A [arduino protoboard] (https://www.adafruit.com/product/2077) to help with the connection
-* A TFT resistive touch screen.
+* A [TFT resistive touch screen](https://www.adafruit.com/product/1651).
 * Amp meter [INA219 from Adafruit](https://www.adafruit.com/product/904). to which I added a parallel shunt resitor.
 * 200A, 75 ma,  shunt resistor on both batteries
 * 50A, 75 ma,  on solar charger and alternator.
