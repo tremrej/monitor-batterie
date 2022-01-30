@@ -36,9 +36,11 @@ To help with connecting everything together I built few boards.
 * I built custom boxes for all these boards using a 3D printer.
 
 ##Schematic diagram
+
 ![schematic](./images/Windscot_electricDiagram_v2.png)
 
 ##Some pictures of the installation
+
 ![shunt battries](./images/shunt_batt.png)
 
 ![shunt alternator](./images/shut_alternator.png)
@@ -46,11 +48,12 @@ To help with connecting everything together I built few boards.
 ![shunt relay](./images/shunt_and_relay_board_2.png)
 
 ##Controler display
-[Main screen](./images/ecran_main.png)
 
-[Screen watermark](./images/ecran_watermark.png)
+![Main screen](./images/ecran_main.png)
 
-[Screen configuration](./images/ecran_config2.jpg)
+![Screen watermark](./images/ecran_watermark.png)
 
-[Screen motor timer](./images/ecran_motor.jpg)
+![Screen configuration](./images/ecran_config2.jpg)
+
+![Screen motor timer](./images/ecran_motor.jpg)
 
