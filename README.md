@@ -14,7 +14,13 @@ But at the end I think the main reason is that was fun to build.
 
 I use a [DC-DC charger from Renogy](https://ca.renogy.com/20a-12v-dc-to-dc-on-board-battery-charger/) for two reasons: I wanted the starter battery to always be connected to the alternator. And I wanted a "smart" charger for the AGM house battery. The starter battery is a cheap starter marine one.
 
+## Schematic diagram
+Here's the schematic diagram of the different component
+![schematic](./images/Windscot_electricDiagram_v2.png)
+
+
 ## Hardware
+List of hardware used in this project
 * A main processor is an Arduino Mega. I started with an Ardunio Uno but I ran out of io ports.
 * A [arduino protoboard] (https://www.adafruit.com/product/2077) to help with the connection
 * A TFT resistive touch screen.
@@ -34,10 +40,6 @@ To help with connecting everything together I built few boards.
 * An arduino prototype board.
 ![relay](./images/Windscot_monitorBattery_connection.png)
 * I built custom boxes for all these boards using a 3D printer.
-
-## Schematic diagram
-
-![schematic](./images/Windscot_electricDiagram_v2.png)
 
 ## Some pictures of the installation
 
