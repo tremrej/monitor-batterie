@@ -57,5 +57,5 @@ To help with connecting everything together I built few boards.
 
 ![Screen configuration](./images/ecran_config2.jpg)
 
-![Screen motor timer](./images/ecran_motor.jpg)
+![Screen motor timer](./images/ecran_motor.png)
 
