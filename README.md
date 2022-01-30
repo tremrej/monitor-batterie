@@ -4,7 +4,7 @@ Why not buy a product off the shelf? Good question. I guess the main reason is t
 And my system is mostlikely cheaper as well.
 But at the end I think the main reason is that was fun to build.
 
-##The requirement I had:
+## The requirement I had:
 * Monitor 2 batterie bank: voltage, current, energy (amp.hour).
 * Monitor the solar charger (current).
 * Monitor the alternator (current).
@@ -14,7 +14,7 @@ But at the end I think the main reason is that was fun to build.
 
 I use a [DC-DC charger from Renogy](https://ca.renogy.com/20a-12v-dc-to-dc-on-board-battery-charger/) for two reasons: I wanted the starter battery to always be connected to the alternator. And I wanted a "smart" charger for the AGM house battery. The starter battery is a cheap starter marine one.
 
-##Hardware
+## Hardware
 * A main processor is an Arduino Mega. I started with an Ardunio Uno but I ran out of io ports.
 * A [arduino protoboard] (https://www.adafruit.com/product/2077) to help with the connection
 * A TFT resistive touch screen.
@@ -23,7 +23,7 @@ I use a [DC-DC charger from Renogy](https://ca.renogy.com/20a-12v-dc-to-dc-on-bo
 * 50A, 75 ma,  on solar charger and alternator.
 * Two relays to control the DC-DC charger.
 
-##Custom board
+## Custom board
 To help with connecting everything together I built few boards.
 * A board with two INA219 for the main batterie
 ![double INA219](./images/windscot_DC_DC_BattShuntBoard_bb.png)
@@ -35,11 +35,11 @@ To help with connecting everything together I built few boards.
 ![relay](./images/Windscot_monitorBattery_connection.png)
 * I built custom boxes for all these boards using a 3D printer.
 
-##Schematic diagram
+## Schematic diagram
 
 ![schematic](./images/Windscot_electricDiagram_v2.png)
 
-##Some pictures of the installation
+## Some pictures of the installation
 
 ![shunt battries](./images/shunt_batt.png)
 
@@ -47,7 +47,7 @@ To help with connecting everything together I built few boards.
 
 ![shunt relay](./images/shunt_and_relay_board_2.png)
 
-##Controler display
+## Controler display
 
 ![Main screen](./images/ecran_main.png)
 
