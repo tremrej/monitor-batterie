@@ -29,6 +29,12 @@ List of hardware used in this project
 * 50A, 75 ma,  on solar charger and alternator.
 * Two relays to control the DC-DC charger.
 
+## Software
+The main file (entry point) is monitorBatt.ino.
+The current version is the one installed on my boat, i.e. it's working!
+I'm sure there are areas of the code that would benefit from a little bit of clean up.
+It's on my to do list.
+
 ## Custom board
 To help with connecting everything together I built few boards.
 * A board with two INA219 for the main batterie
